@@ -7,7 +7,7 @@ to load them, organized by seminar topic.
 
 ```
 datasets/                                    all OCEL 2.0 JSON datasets
-common/ocel_loader.py                        shared loading helper
+ocel_common/ocel_loader.py                   shared loading helper
 topic-1-streaming-events/                    uses ocel2-p2p + order-management
 topic-2-cross-object-performance-analysis/   uses ocel2-p2p + order-management
 topic-3-geo-process-exploration/             uses sf-fire-ems-2025-q1
@@ -52,7 +52,7 @@ cd topic-1-streaming-events   # or topic-2-..., topic-3-...
 python load_data.py
 ```
 
-Each `load_data.py` uses [`common/ocel_loader.py`](common/ocel_loader.py),
+Each `load_data.py` uses [`ocel_common/ocel_loader.py`](ocel_common/ocel_loader.py),
 which wraps [pm4py](https://processintelligence.solutions/pm4py)'s OCEL 2.0
 JSON reader. `load_ocel(path)` returns a pm4py OCEL object exposing three
 flat pandas DataFrames:

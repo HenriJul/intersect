@@ -9,7 +9,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from common.ocel_loader import FIRE_EMS_PATH, load_ocel, summarize
+from ocel_common.ocel_loader import FIRE_EMS_PATH, load_ocel, summarize
 
 
 def main():
