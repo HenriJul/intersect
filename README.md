@@ -53,12 +53,12 @@ python load_data.py
 ```
 
 Each `load_data.py` uses [`ocel_common/ocel_loader.py`](ocel_common/ocel_loader.py),
-which wraps [pm4py](https://processintelligence.solutions/pm4py)'s OCEL 2.0
-JSON reader. `load_ocel(path)` returns a pm4py OCEL object exposing three
-flat pandas DataFrames:
+which parses the OCEL 2.0 JSON directly with the standard library and pandas
+(no pm4py). `load_ocel(path)` returns the raw OCEL dict; three helpers turn
+it into flat pandas DataFrames:
 
-- `ocel.events` — one row per event
-- `ocel.objects` — one row per object
-- `ocel.relations` — event-to-object relationships
+- `events_table(ocel)` — one row per event
+- `objects_table(ocel)` — one row per object
+- `relations_table(ocel)` — event-to-object relationships
 
 Use these as your starting point for exploration and analysis.
