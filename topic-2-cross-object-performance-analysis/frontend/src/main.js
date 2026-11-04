@@ -6,24 +6,29 @@
  * is chosen via dropdown or file upload.
  */
 
-import { getLogPayload, probePythonBackend } from "./api/ocelClient.js?v=6";
-import { renderCapacityView, renderTeamChartCard } from "./views/capacityView.js?v=6";
-import { computeComparisonMetrics, renderComparisonView } from "./views/comparisonView.js?v=6";
-import { renderDelayBody, renderDelayView } from "./views/delayView.js?v=6";
-import { renderFlowBody, renderFlowMapView } from "./views/flowMapView.js?v=6";
-import { renderOverviewBody, renderOverviewView } from "./views/overviewView.js?v=6";
+import { getLogPayload, probePythonBackend } from "./api/ocelClient.js?v=7";
+import {
+  renderSchemaTextEditorModal,
+  resetStepSchemaTexts,
+  saveStepSchemaTexts
+} from "./data/schemaTexts.js?v=7";
+import { renderCapacityView, renderTeamChartCard } from "./views/capacityView.js?v=7";
+import { computeComparisonMetrics, renderComparisonView } from "./views/comparisonView.js?v=7";
+import { renderDelayBody, renderDelayView } from "./views/delayView.js?v=7";
+import { renderFlowBody, renderFlowMapView } from "./views/flowMapView.js?v=7";
+import { renderOverviewBody, renderOverviewView } from "./views/overviewView.js?v=7";
 import {
   PAGE_ICONS,
   computeStepSlaStatus,
   renderPageInfoOverlay
-} from "./views/pageGuides.js?v=6";
-import { renderBrandMarkSvg, renderStarterView } from "./views/starterView.js?v=6";
+} from "./views/pageGuides.js?v=7";
+import { renderBrandMarkSvg, renderStarterView } from "./views/starterView.js?v=7";
 import {
   TIMELINE_MODES,
   renderTimelineCardsRegion,
   renderTimelineView
-} from "./views/timelineView.js?v=6";
-import { renderUploadModal } from "./views/uploadModal.js?v=6";
+} from "./views/timelineView.js?v=7";
+import { renderUploadModal } from "./views/uploadModal.js?v=7";
 
 const SUBPAGES = [
   { id: "overview", label: "Overview" },
@@ -57,6 +62,7 @@ const state = {
   selectedEventInfo: null,
   pageInfoOpen: false,
   uploadModalOpen: false,
+  schemaEditorOpen: false,
   apiStatus: { connected: false, mode: "Static Demo" }
 };
 
@@ -123,6 +129,7 @@ function selectLog(newLogId) {
   if (!newLogId) {
     state.logId = null;
     state.pageInfoOpen = false;
+    state.schemaEditorOpen = false;
     state.selectedEventKey = null;
     state.selectedEventInfo = null;
     return;
@@ -137,6 +144,7 @@ function selectLog(newLogId) {
   state.selectedStepId = log.defaultStepId;
   state.selectedTeamId = log.capacity.defaultTeamId;
   state.slaThresholdDays = log.defaultSlaDays;
+  state.schemaEditorOpen = false;
   state.selectedEventKey = null;
   state.selectedEventInfo = null;
 }
@@ -259,7 +267,7 @@ function syncOverlays() {
   const shell = document.getElementById("app-shell");
   const themeBtn = document.getElementById("theme-toggle-btn");
   const modalRoot = document.getElementById("modal-root");
-  const hasOverlay = state.pageInfoOpen || state.uploadModalOpen;
+  const hasOverlay = state.pageInfoOpen || state.uploadModalOpen || state.schemaEditorOpen;
 
   if (shell) {
     shell.classList.toggle("is-blurred", hasOverlay);
@@ -270,6 +278,9 @@ function syncOverlays() {
   if (modalRoot) {
     if (state.pageInfoOpen && state.logId) {
       modalRoot.innerHTML = renderPageInfoOverlay(state.activePage, true);
+    } else if (state.schemaEditorOpen && state.logId) {
+      const log = getLogPayload(state.logId);
+      modalRoot.innerHTML = renderSchemaTextEditorModal(log, state, true);
     } else if (state.uploadModalOpen) {
       modalRoot.innerHTML = renderUploadModal(true);
     } else {
@@ -393,6 +404,7 @@ document.addEventListener("click", (e) => {
   if (action === "open-page-info") {
     state.pageInfoOpen = true;
     state.uploadModalOpen = false;
+    state.schemaEditorOpen = false;
     syncOverlays();
     return;
   }
@@ -400,6 +412,15 @@ document.addEventListener("click", (e) => {
   if (action === "open-upload") {
     state.uploadModalOpen = true;
     state.pageInfoOpen = false;
+    state.schemaEditorOpen = false;
+    syncOverlays();
+    return;
+  }
+
+  if (action === "open-schema-editor") {
+    state.schemaEditorOpen = true;
+    state.pageInfoOpen = false;
+    state.uploadModalOpen = false;
     syncOverlays();
     return;
   }
@@ -407,6 +428,7 @@ document.addEventListener("click", (e) => {
   if (action === "close-modal") {
     state.pageInfoOpen = false;
     state.uploadModalOpen = false;
+    state.schemaEditorOpen = false;
     syncOverlays();
     return;
   }
@@ -414,12 +436,49 @@ document.addEventListener("click", (e) => {
   if (action === "close-modal-backdrop" && e.target === target) {
     state.pageInfoOpen = false;
     state.uploadModalOpen = false;
+    state.schemaEditorOpen = false;
     syncOverlays();
     return;
   }
 
   if (!state.logId) return;
   const log = getLogPayload(state.logId);
+
+  if (action === "save-schema-texts") {
+    const getVal = (id) => {
+      const el = document.getElementById(id);
+      return el ? el.value : "";
+    };
+    const sourceNodes = Array.from(document.querySelectorAll("[data-source-idx]"));
+    const chainNodes = Array.from(document.querySelectorAll("[data-chain-idx]"));
+
+    saveStepSchemaTexts(log, state.selectedStepId, {
+      summaryText: getVal("field-summary-text"),
+      allItemsDesc: getVal("field-all-items-desc"),
+      otherObjectsDesc: getVal("field-other-objects-desc"),
+      teamDesc: getVal("field-team-desc"),
+      delaySourceDescs: sourceNodes.map((n) => n.value),
+      chainDescs: chainNodes.map((n) => n.value)
+    });
+
+    state.schemaEditorOpen = false;
+    syncOverlays();
+    const delayRegion = document.getElementById("delay-dynamic-region");
+    if (delayRegion) {
+      delayRegion.innerHTML = renderDelayBody(log, state);
+    }
+    return;
+  }
+
+  if (action === "reset-schema-texts") {
+    resetStepSchemaTexts(log, state.selectedStepId);
+    syncOverlays();
+    const delayRegion = document.getElementById("delay-dynamic-region");
+    if (delayRegion) {
+      delayRegion.innerHTML = renderDelayBody(log, state);
+    }
+    return;
+  }
 
   if (action === "goto-page") {
     const nextPage = target.dataset.page;
@@ -520,6 +579,22 @@ document.addEventListener("change", (e) => {
     } else {
       renderPage({ animate: false });
     }
+  } else if (target.dataset.action === "select-step-in-editor" && state.logId) {
+    state.selectedStepId = target.value;
+    const log = getLogPayload(state.logId);
+    const step = log.steps[state.selectedStepId] || log.steps[log.defaultStepId];
+    const slaInfo = computeStepSlaStatus(step, log, state.slaThresholdDays);
+    const stepSelect = document.getElementById("step-select");
+    if (stepSelect) stepSelect.value = state.selectedStepId;
+    const metaEl = document.getElementById("delay-meta-text");
+    if (metaEl) {
+      metaEl.textContent = `${step.volume} · ${slaInfo.affectedValue} affected (> ${state.slaThresholdDays.toFixed(1)}d threshold)`;
+    }
+    const delayRegion = document.getElementById("delay-dynamic-region");
+    if (delayRegion) {
+      delayRegion.innerHTML = renderDelayBody(log, state);
+    }
+    syncOverlays();
   }
 });
 
@@ -537,9 +612,13 @@ document.addEventListener("input", (e) => {
 });
 
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && (state.pageInfoOpen || state.uploadModalOpen)) {
+  if (
+    e.key === "Escape" &&
+    (state.pageInfoOpen || state.uploadModalOpen || state.schemaEditorOpen)
+  ) {
     state.pageInfoOpen = false;
     state.uploadModalOpen = false;
+    state.schemaEditorOpen = false;
     syncOverlays();
   }
 });

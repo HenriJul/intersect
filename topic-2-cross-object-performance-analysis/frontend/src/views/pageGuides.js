@@ -17,12 +17,12 @@ export const PAGE_GUIDES = {
     purpose: "Quickly identify the top 3 multi-object bottlenecks across your selected process.",
     steps: [
       {
-        heading: "Scan Summary Metrics",
-        detail: "Check total tracked objects, the single slowest shared step, and total delayed order or invoice value."
+        heading: "Set Your Global Delay Threshold",
+        detail: "Use the 'Delay Threshold' slider in the top-right header to define what wait time counts as a breach across all pages."
       },
       {
         heading: "Review Ranked Bottlenecks",
-        detail: "The top 3 bottlenecks are automatically ranked by average cross-object wait time and business impact."
+        detail: "The top 3 bottlenecks are ranked by average cross-object wait time, with color dots and impact scaling to your threshold."
       },
       {
         heading: "Drill Into a Bottleneck",
@@ -39,44 +39,44 @@ export const PAGE_GUIDES = {
         detail: "Click any vertical pill spanning multiple lanes (e.g. Create Package or Execute Payment) to focus it."
       },
       {
-        heading: "Toggle Exceptions & Delay Chains",
-        detail: "Use 'Show Exceptions' to reveal rework loops, or 'Highlight Delay Chain' to see upstream-to-downstream propagation."
+        heading: "Compare Against Delay Threshold",
+        detail: "Adjust the 'Delay Threshold' slider in the header to see which shared steps breach (red) or approach (amber) your target."
       },
       {
-        heading: "Continue to Root Causes",
-        detail: "Use the bottom summary bar to jump directly to 'Delay Breakdown' or 'Case Timeline' for your selected step."
+        heading: "Toggle Exceptions & Delay Chains",
+        detail: "Use 'Show Exceptions' to reveal rework loops, or 'Highlight Delay Chain' to see upstream-to-downstream propagation."
       }
     ]
   },
   delays: {
     title: "Delay Breakdown",
-    purpose: "Understand whether a shared step is slow due to missing objects or an overloaded team.",
+    purpose: "Understand whether a shared step is slow due to missing objects or an overloaded team, and customize explanations for your log type.",
     steps: [
       {
-        heading: "Switch Process Step",
-        detail: "Use the 'Process Step' dropdown in the top-right corner to inspect any multi-object step."
+        heading: "Switch Process Step & Threshold",
+        detail: "Use the 'Process Step' dropdown and 'Delay Threshold' slider in the top-right header to inspect any multi-object step."
       },
       {
-        heading: "Read the Wait-Time Split",
-        detail: "Compare time spent 'Waiting for All Items' and 'Waiting for Other Objects' against 'Waiting for Team'."
+        heading: "Read the Plain-Language Wait Split",
+        detail: "Compare time spent 'Waiting for All Items' and 'Waiting for Other Objects' against 'Waiting for Team', along with plain-English explanations."
       },
       {
-        heading: "Check Slowest Inputs & Chain",
-        detail: "See which incoming object holds up the step most often, and how upstream delays ripple downstream."
+        heading: "Edit Explanations for This Log Type",
+        detail: "Click 'Edit Explanations' to open the schema text editor overlay. Custom descriptions are saved to this log's schema (its object and event types) and automatically reused whenever a matching OCEL is loaded."
       }
     ]
   },
   teams: {
     title: "Team Workload",
-    purpose: "See how shared teams split their capacity across competing workflows and where backlogs pile up.",
+    purpose: "See how shared teams split their capacity across competing workflows and where delayed backlogs pile up.",
     steps: [
       {
         heading: "Choose a Team on the Left",
         detail: "Click Warehousing, Shipment, Finance, or Procurement to inspect that group's workload distribution."
       },
       {
-        heading: "Compare Load vs. Waiting Cases",
-        detail: "Grey bars show team utilization (%) while the red curve tracks waiting cases accumulating over time."
+        heading: "Compare Load vs. Delayed Backlog",
+        detail: "Grey bars show team utilization (%) while the red curve tracks delayed cases exceeding your header 'Delay Threshold'."
       },
       {
         heading: "Inspect Peak Backlog Cases",
@@ -89,8 +89,8 @@ export const PAGE_GUIDES = {
     purpose: "Contrast on-time cases against delayed cases and estimate the benefit of reducing the main delay.",
     steps: [
       {
-        heading: "Adjust the Delay Threshold",
-        detail: "Drag the 'Delay Threshold' slider in the top-right to redefine what counts as a delayed case."
+        heading: "Adjust the Global Delay Threshold",
+        detail: "Drag the 'Delay Threshold' slider in the top-right to redefine what counts as a delayed case across the entire app."
       },
       {
         heading: "Compare Top Delay Factors",
