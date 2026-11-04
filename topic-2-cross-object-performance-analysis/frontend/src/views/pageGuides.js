@@ -1,0 +1,197 @@
+/**
+ * Sidebar Page Icons, Title + Info Button Header Helper, and Page-Specific Guide Overlays.
+ */
+
+export const PAGE_ICONS = {
+  overview: `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>`,
+  flow: `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="12" r="2.5"/><path d="M7.5 6h3.5a3 3 0 0 1 3 3v0a3 3 0 0 0 2.5 3"/><path d="M7.5 18h3.5a3 3 0 0 0 3-3v0a3 3 0 0 1 2.5-3"/></svg>`,
+  delays: `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg>`,
+  teams: `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  compare: `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
+  timeline: `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="14" y2="6"/><line x1="8" y1="12" x2="20" y2="12"/><line x1="5" y1="18" x2="16" y2="18"/><circle cx="14" cy="6" r="1.8"/><circle cx="20" cy="12" r="1.8"/><circle cx="16" cy="18" r="1.8"/></svg>`
+};
+
+export const PAGE_GUIDES = {
+  overview: {
+    title: "Overview",
+    purpose: "Quickly identify the top 3 multi-object bottlenecks across your selected process.",
+    steps: [
+      {
+        heading: "Scan Summary Metrics",
+        detail: "Check total tracked objects, the single slowest shared step, and total delayed order or invoice value."
+      },
+      {
+        heading: "Review Ranked Bottlenecks",
+        detail: "The top 3 bottlenecks are automatically ranked by average cross-object wait time and business impact."
+      },
+      {
+        heading: "Drill Into a Bottleneck",
+        detail: "Click 'View in Process Flow' or 'View Delay Breakdown' on any row to inspect that step directly."
+      }
+    ]
+  },
+  flow: {
+    title: "Process Flow",
+    purpose: "Visualize how separate business objects travel along parallel lanes and meet at shared steps.",
+    steps: [
+      {
+        heading: "Select Any Shared Step",
+        detail: "Click any vertical pill spanning multiple lanes (e.g. Create Package or Execute Payment) to focus it."
+      },
+      {
+        heading: "Toggle Exceptions & Delay Chains",
+        detail: "Use 'Show Exceptions' to reveal rework loops, or 'Highlight Delay Chain' to see upstream-to-downstream propagation."
+      },
+      {
+        heading: "Continue to Root Causes",
+        detail: "Use the bottom summary bar to jump directly to 'Delay Breakdown' or 'Case Timeline' for your selected step."
+      }
+    ]
+  },
+  delays: {
+    title: "Delay Breakdown",
+    purpose: "Understand whether a shared step is slow due to missing objects or an overloaded team.",
+    steps: [
+      {
+        heading: "Switch Process Step",
+        detail: "Use the 'Process Step' dropdown in the top-right corner to inspect any multi-object step."
+      },
+      {
+        heading: "Read the Wait-Time Split",
+        detail: "Compare time spent 'Waiting for All Items' and 'Waiting for Other Objects' against 'Waiting for Team'."
+      },
+      {
+        heading: "Check Slowest Inputs & Chain",
+        detail: "See which incoming object holds up the step most often, and how upstream delays ripple downstream."
+      }
+    ]
+  },
+  teams: {
+    title: "Team Workload",
+    purpose: "See how shared teams split their capacity across competing workflows and where backlogs pile up.",
+    steps: [
+      {
+        heading: "Choose a Team on the Left",
+        detail: "Click Warehousing, Shipment, Finance, or Procurement to inspect that group's workload distribution."
+      },
+      {
+        heading: "Compare Load vs. Waiting Cases",
+        detail: "Grey bars show team utilization (%) while the red curve tracks waiting cases accumulating over time."
+      },
+      {
+        heading: "Inspect Peak Backlog Cases",
+        detail: "Click 'View Case Timeline' beneath the chart to examine an individual delayed case."
+      }
+    ]
+  },
+  compare: {
+    title: "Compare Cases",
+    purpose: "Contrast on-time cases against delayed cases and estimate the benefit of reducing the main delay.",
+    steps: [
+      {
+        heading: "Adjust the Delay Threshold",
+        detail: "Drag the 'Delay Threshold' slider in the top-right to redefine what counts as a delayed case."
+      },
+      {
+        heading: "Compare Top Delay Factors",
+        detail: "Red vs. green bars show how much longer cases wait when a specific condition (like an out-of-stock item) occurs."
+      },
+      {
+        heading: "Estimate Improvement",
+        detail: "Move the reduction slider on the right to preview how many cases and euros would move back on track."
+      }
+    ]
+  },
+  timeline: {
+    title: "Case Timeline",
+    purpose: "Verify cross-object delays on concrete real-world examples from the event log.",
+    steps: [
+      {
+        heading: "Switch Between Examples",
+        detail: "Use the top-right tabs to view a 'Delayed Example', an 'On-Time Example', or 'Show Both' together."
+      },
+      {
+        heading: "Spot the Shaded Wait Window",
+        detail: "Each row is one individual object; the shaded red band highlights where early objects sat waiting on late ones."
+      },
+      {
+        heading: "Inspect Individual Events",
+        detail: "Click any colored dot along a row to see its exact timestamp and responsible employee or department below."
+      }
+    ]
+  }
+};
+
+export function renderPageTitleBlock(title, metaText) {
+  return `
+    <div>
+      <div class="page-title-row">
+        <h1 class="page-title">${title}</h1>
+        <button class="page-info-btn"
+                data-action="open-page-info"
+                aria-label="How to use ${title}"
+                title="How to use this page">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+        </button>
+      </div>
+      <div class="page-meta">${metaText}</div>
+    </div>
+  `;
+}
+
+export function renderPageInfoOverlay(pageId, isOpen) {
+  if (!isOpen) return "";
+  const guide = PAGE_GUIDES[pageId] || PAGE_GUIDES.overview;
+
+  return `
+    <div class="modal-overlay" data-action="close-modal-backdrop">
+      <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="guide-modal-title">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <div style="display:flex; align-items:center; gap:9px;">
+            <span style="width:30px; height:30px; border-radius:8px; background:var(--bg-muted); display:inline-flex; align-items:center; justify-content:center; color:var(--text-primary);">
+              ${PAGE_ICONS[pageId] || ""}
+            </span>
+            <div>
+              <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">
+                How to use this page
+              </div>
+              <h2 id="guide-modal-title" style="margin:0; font-size:18px; font-weight:700; letter-spacing:-0.02em;">
+                ${guide.title}
+              </h2>
+            </div>
+          </div>
+
+          <button class="btn btn-sm" data-action="close-modal" aria-label="Close guide">Close</button>
+        </div>
+
+        <p style="margin:12px 0 0; font-size:13.5px; color:var(--text-secondary);">
+          ${guide.purpose}
+        </p>
+
+        <div class="guide-step-list">
+          ${guide.steps
+            .map(
+              (st, idx) => `
+              <div class="guide-step-item">
+                <span class="guide-step-num">${idx + 1}</span>
+                <div>
+                  <div style="font-weight:600; font-size:13.5px; color:var(--text-primary);">${st.heading}</div>
+                  <div style="font-size:12.5px; color:var(--text-secondary); margin-top:2px;">${st.detail}</div>
+                </div>
+              </div>
+            `
+            )
+            .join("")}
+        </div>
+
+        <div style="display:flex; justify-content:flex-end;">
+          <button class="btn btn-dark" data-action="close-modal">Got it</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
