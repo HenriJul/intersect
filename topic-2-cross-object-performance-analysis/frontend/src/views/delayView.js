@@ -2,17 +2,25 @@
  * Subpage 3: Delay Breakdown
  */
 
-import { renderPageTitleBlock } from "./pageGuides.js";
+import {
+  computeStepSlaStatus,
+  renderDelayThresholdControl,
+  renderPageTitleBlock
+} from "./pageGuides.js?v=6";
 
 export function renderDelayBody(log, state) {
   const step = log.steps[state.selectedStepId] || log.steps[log.defaultStepId];
   const bd = step.breakdown;
+  const slaInfo = computeStepSlaStatus(step, log, state.slaThresholdDays);
 
   return `
     <div class="card sub-animate" style="margin-bottom:18px;">
       <div class="card-title">
         <span>Where Wait Time Goes (${bd.totalDays} days avg)</span>
-        <span class="badge badge-neutral">${step.primaryCauseTag}</span>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <span class="badge ${slaInfo.badgeClass}">${slaInfo.statusLabel}</span>
+          <span class="badge badge-neutral">${step.primaryCauseTag}</span>
+        </div>
       </div>
 
       <div class="delay-summary-callout">
@@ -129,12 +137,17 @@ export function renderDelayBody(log, state) {
 export function renderDelayView(log, state) {
   const step = log.steps[state.selectedStepId] || log.steps[log.defaultStepId];
   const allSteps = Object.values(log.steps);
+  const slaInfo = computeStepSlaStatus(step, log, state.slaThresholdDays);
 
   return `
     <div class="page-header">
-      ${renderPageTitleBlock("Delay Breakdown", `<span id="delay-meta-text">${step.volume} · ${step.affectedValue} affected</span>`)}
+      ${renderPageTitleBlock(
+        "Delay Breakdown",
+        `<span id="delay-meta-text">${step.volume} · ${slaInfo.affectedValue} affected (&gt; ${state.slaThresholdDays.toFixed(1)}d threshold)</span>`
+      )}
 
       <div class="header-controls">
+        ${renderDelayThresholdControl(state)}
         <label for="step-select" style="font-size:13px; color:var(--text-muted); font-weight:500;">Process Step:</label>
         <select id="step-select" class="select-input" data-action="select-step-dropdown">
           ${allSteps

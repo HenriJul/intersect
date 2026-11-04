@@ -6,20 +6,24 @@
  * is chosen via dropdown or file upload.
  */
 
-import { getLogPayload, probePythonBackend } from "./api/ocelClient.js?v=5";
-import { renderCapacityView, renderTeamChartCard } from "./views/capacityView.js?v=5";
-import { computeComparisonMetrics, renderComparisonView } from "./views/comparisonView.js?v=5";
-import { renderDelayBody, renderDelayView } from "./views/delayView.js?v=5";
-import { renderFlowBody, renderFlowMapView } from "./views/flowMapView.js?v=5";
-import { renderOverviewView } from "./views/overviewView.js?v=5";
-import { PAGE_ICONS, renderPageInfoOverlay } from "./views/pageGuides.js?v=5";
-import { renderBrandMarkSvg, renderStarterView } from "./views/starterView.js?v=5";
+import { getLogPayload, probePythonBackend } from "./api/ocelClient.js?v=6";
+import { renderCapacityView, renderTeamChartCard } from "./views/capacityView.js?v=6";
+import { computeComparisonMetrics, renderComparisonView } from "./views/comparisonView.js?v=6";
+import { renderDelayBody, renderDelayView } from "./views/delayView.js?v=6";
+import { renderFlowBody, renderFlowMapView } from "./views/flowMapView.js?v=6";
+import { renderOverviewBody, renderOverviewView } from "./views/overviewView.js?v=6";
+import {
+  PAGE_ICONS,
+  computeStepSlaStatus,
+  renderPageInfoOverlay
+} from "./views/pageGuides.js?v=6";
+import { renderBrandMarkSvg, renderStarterView } from "./views/starterView.js?v=6";
 import {
   TIMELINE_MODES,
   renderTimelineCardsRegion,
   renderTimelineView
-} from "./views/timelineView.js?v=5";
-import { renderUploadModal } from "./views/uploadModal.js?v=5";
+} from "./views/timelineView.js?v=6";
+import { renderUploadModal } from "./views/uploadModal.js?v=6";
 
 const SUBPAGES = [
   { id: "overview", label: "Overview" },
@@ -277,7 +281,7 @@ function syncOverlays() {
 function getActivePageHtml(log) {
   switch (state.activePage) {
     case "overview":
-      return renderOverviewView(log);
+      return renderOverviewView(log, state);
     case "flow":
       return renderFlowMapView(log, state);
     case "delays":
@@ -289,7 +293,7 @@ function getActivePageHtml(log) {
     case "timeline":
       return renderTimelineView(log, state);
     default:
-      return renderOverviewView(log);
+      return renderOverviewView(log, state);
   }
 }
 
@@ -319,7 +323,7 @@ function updateComparisonNumbersInPlace() {
   };
 
   setTxt("cmp-meta-text", `On-time vs. delayed (> ${state.slaThresholdDays.toFixed(1)} days wait)`);
-  setTxt("cmp-sla-val", `${state.slaThresholdDays.toFixed(1)}d`);
+  setTxt("header-sla-val", `${state.slaThresholdDays.toFixed(1)}d`);
   setTxt("cmp-ontime-count", m.onTimeCount);
   setTxt("cmp-ontime-pct", m.onTimePct);
   setTxt("cmp-delayed-count", m.delayedCount);
@@ -329,6 +333,42 @@ function updateComparisonNumbersInPlace() {
   setTxt("cmp-recovered", m.recoveredCases);
   setTxt("cmp-unblocked", m.unblockedEur);
   setTxt("cmp-ripples", m.fewerRipples);
+}
+
+function updateSlaAcrossActivePage() {
+  if (!state.logId) return;
+  const log = getLogPayload(state.logId);
+  const slaValEl = document.getElementById("header-sla-val");
+  if (slaValEl) {
+    slaValEl.textContent = `${state.slaThresholdDays.toFixed(1)}d`;
+  }
+
+  if (state.activePage === "overview") {
+    const region = document.getElementById("overview-dynamic-region");
+    if (region) region.innerHTML = renderOverviewBody(log, state);
+  } else if (state.activePage === "flow") {
+    const region = document.getElementById("flow-dynamic-region");
+    if (region) region.innerHTML = renderFlowBody(log, state);
+  } else if (state.activePage === "delays") {
+    const step = log.steps[state.selectedStepId] || log.steps[log.defaultStepId];
+    const slaInfo = computeStepSlaStatus(step, log, state.slaThresholdDays);
+    const metaEl = document.getElementById("delay-meta-text");
+    if (metaEl) {
+      metaEl.textContent = `${step.volume} · ${slaInfo.affectedValue} affected (> ${state.slaThresholdDays.toFixed(1)}d threshold)`;
+    }
+    const region = document.getElementById("delay-dynamic-region");
+    if (region) region.innerHTML = renderDelayBody(log, state);
+  } else if (state.activePage === "teams") {
+    const activeTeam =
+      log.capacity.teams.find((t) => t.id === state.selectedTeamId) || log.capacity.teams[0];
+    const chartRegion = document.getElementById("team-chart-region");
+    if (chartRegion) chartRegion.innerHTML = renderTeamChartCard(activeTeam, log, state);
+  } else if (state.activePage === "compare") {
+    updateComparisonNumbersInPlace();
+  } else if (state.activePage === "timeline") {
+    const region = document.getElementById("timeline-cards-region");
+    if (region) region.innerHTML = renderTimelineCardsRegion(log, state);
+  }
 }
 
 /* ---------- Delegated Event Listeners ---------- */
@@ -419,7 +459,7 @@ document.addEventListener("click", (e) => {
       log.capacity.teams.find((t) => t.id === state.selectedTeamId) || log.capacity.teams[0];
     const chartRegion = document.getElementById("team-chart-region");
     if (chartRegion) {
-      chartRegion.innerHTML = renderTeamChartCard(activeTeam);
+      chartRegion.innerHTML = renderTeamChartCard(activeTeam, log, state);
     }
   } else if (action === "set-timeline-mode") {
     const nextMode = target.dataset.mode;
@@ -469,8 +509,11 @@ document.addEventListener("change", (e) => {
     state.selectedStepId = target.value;
     const log = getLogPayload(state.logId);
     const step = log.steps[state.selectedStepId] || log.steps[log.defaultStepId];
+    const slaInfo = computeStepSlaStatus(step, log, state.slaThresholdDays);
     const metaEl = document.getElementById("delay-meta-text");
-    if (metaEl) metaEl.textContent = `${step.volume} · ${step.affectedValue} affected`;
+    if (metaEl) {
+      metaEl.textContent = `${step.volume} · ${slaInfo.affectedValue} affected (> ${state.slaThresholdDays.toFixed(1)}d threshold)`;
+    }
     const delayRegion = document.getElementById("delay-dynamic-region");
     if (delayRegion) {
       delayRegion.innerHTML = renderDelayBody(log, state);
@@ -486,7 +529,7 @@ document.addEventListener("input", (e) => {
 
   if (target.dataset.action === "change-sla") {
     state.slaThresholdDays = parseFloat(target.value);
-    updateComparisonNumbersInPlace();
+    updateSlaAcrossActivePage();
   } else if (target.dataset.action === "change-whatif") {
     state.whatIfReductionPct = parseInt(target.value, 10);
     updateComparisonNumbersInPlace();

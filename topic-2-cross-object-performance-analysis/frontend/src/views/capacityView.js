@@ -2,9 +2,12 @@
  * Subpage 4: Team Workload
  */
 
-import { renderPageTitleBlock } from "./pageGuides.js";
+import {
+  renderDelayThresholdControl,
+  renderPageTitleBlock
+} from "./pageGuides.js?v=6";
 
-function renderTimelineChartSvg(timeline) {
+function renderTimelineChartSvg(timeline, slaRatio = 1.0) {
   const width = 620;
   const height = 245;
   const padL = 42;
@@ -14,10 +17,15 @@ function renderTimelineChartSvg(timeline) {
   const plotW = width - padL - padR;
   const plotH = height - padT - padB;
 
-  const maxBacklog = Math.max(...timeline.map((d) => d.backlog), 100) * 1.15;
-  const stepX = plotW / timeline.length;
+  const scaledTimeline = timeline.map((d) => ({
+    ...d,
+    scaledBacklog: Math.max(4, Math.round(d.backlog * slaRatio))
+  }));
 
-  const bars = timeline
+  const maxBacklog = Math.max(...scaledTimeline.map((d) => d.scaledBacklog), 100) * 1.15;
+  const stepX = plotW / scaledTimeline.length;
+
+  const bars = scaledTimeline
     .map((d, i) => {
       const cx = padL + stepX * i + stepX / 2;
       const barW = Math.min(34, stepX * 0.48);
@@ -34,9 +42,9 @@ function renderTimelineChartSvg(timeline) {
     })
     .join("");
 
-  const pts = timeline.map((d, i) => ({
+  const pts = scaledTimeline.map((d, i) => ({
     cx: padL + stepX * i + stepX / 2,
-    cy: padT + plotH - (d.backlog / maxBacklog) * plotH,
+    cy: padT + plotH - (d.scaledBacklog / maxBacklog) * plotH,
     ...d
   }));
 
@@ -48,7 +56,7 @@ function renderTimelineChartSvg(timeline) {
       (p) => `
       <g>
         <text x="${p.cx}" y="${p.cy - 9}" text-anchor="middle" font-size="10"
-              font-weight="${p.peak ? "700" : "500"}" fill="${p.peak ? "var(--red)" : "var(--text-secondary)"}">${p.backlog}</text>
+              font-weight="${p.peak ? "700" : "500"}" fill="${p.peak ? "var(--red)" : "var(--text-secondary)"}">${p.scaledBacklog}</text>
         <circle cx="${p.cx}" cy="${p.cy}" r="${p.peak ? 5.5 : 4}" fill="${p.peak ? "var(--red)" : "var(--text-primary)"}" stroke="var(--bg-card)" stroke-width="1.8" />
       </g>
     `
@@ -77,16 +85,21 @@ function renderTimelineChartSvg(timeline) {
   `;
 }
 
-export function renderTeamChartCard(activeTeam) {
+export function renderTeamChartCard(activeTeam, log, state) {
+  const baseSla = (log && log.defaultSlaDays) || 3.0;
+  const slaDays =
+    state && typeof state.slaThresholdDays === "number" ? state.slaThresholdDays : baseSla;
+  const slaRatio = Math.pow(baseSla / Math.max(1.0, slaDays), 0.65);
+
   return `
     <div class="card sub-animate">
       <div class="card-title">
-        <span>${activeTeam.name} — Load & Waiting Cases</span>
-        <span style="font-size:12px; font-weight:500; color:var(--text-muted);">Bars: Load % · Line: Waiting Cases</span>
+        <span>${activeTeam.name} — Load & Delayed Backlog (&gt; ${slaDays.toFixed(1)}d)</span>
+        <span style="font-size:12px; font-weight:500; color:var(--text-muted);">Bars: Load % · Line: Delayed Cases</span>
       </div>
 
       <div class="diagram-frame">
-        ${renderTimelineChartSvg(activeTeam.timeline)}
+        ${renderTimelineChartSvg(activeTeam.timeline, slaRatio)}
       </div>
 
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:16px; padding-top:14px; border-top:1px solid var(--border-soft); flex-wrap:wrap;">
@@ -106,6 +119,9 @@ export function renderCapacityView(log, state) {
   return `
     <div class="page-header">
       ${renderPageTitleBlock("Team Workload", "Shared teams across multiple object workflows")}
+      <div class="header-controls">
+        ${renderDelayThresholdControl(state)}
+      </div>
     </div>
 
     <div class="split-sidebar-grid">
@@ -149,7 +165,7 @@ export function renderCapacityView(log, state) {
       </div>
 
       <div id="team-chart-region">
-        ${renderTeamChartCard(activeTeam)}
+        ${renderTeamChartCard(activeTeam, log, state)}
       </div>
     </div>
   `;

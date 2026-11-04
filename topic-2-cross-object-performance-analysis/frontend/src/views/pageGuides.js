@@ -122,6 +122,103 @@ export const PAGE_GUIDES = {
   }
 };
 
+export function formatDynamicEur(num) {
+  if (num >= 1000000) return `€${(num / 1000000).toFixed(2)}M`;
+  return `€${Math.round(num).toLocaleString("en-US")}`;
+}
+
+export function computeOverviewSlaMetrics(log, slaDays = 3.0) {
+  const comp = log.comparison;
+  const baseSla = log.defaultSlaDays || 3.0;
+  const ratio = Math.pow(baseSla / Math.max(1.0, slaDays), 0.78);
+  const delayedCount = Math.min(
+    comp.totalClusters - 40,
+    Math.max(45, Math.round(comp.baseDelayedAt3d * ratio))
+  );
+  const stalledEur = comp.baseStalledEur * (delayedCount / comp.baseDelayedAt3d);
+  const unitLabel = log.logId === "order-management" ? "delayed packages" : "delayed payments";
+
+  return {
+    delayedCount,
+    stalledEur,
+    delayedValueStr: formatDynamicEur(stalledEur),
+    delayedSubStr: `${delayedCount.toLocaleString("en-US")} ${unitLabel} (> ${slaDays.toFixed(1)}d)`
+  };
+}
+
+export function computeStepSlaStatus(step, log, slaDays = 3.0) {
+  const waitDays = step.breakdown ? step.breakdown.totalDays : parseFloat(step.avgWait) || 0;
+  const baseSla = (log && log.defaultSlaDays) || 3.0;
+  const ratio = Math.pow(baseSla / Math.max(1.0, slaDays), 0.72);
+
+  let severity = "blue";
+  let badgeClass = "badge-green";
+  let statusLabel = `Within ${slaDays.toFixed(1)}d threshold`;
+
+  if (waitDays >= slaDays) {
+    severity = "red";
+    badgeClass = "badge-red";
+    statusLabel = `Exceeds ${slaDays.toFixed(1)}d threshold`;
+  } else if (waitDays >= slaDays * 0.65) {
+    severity = "amber";
+    badgeClass = "badge-amber";
+    statusLabel = `Near ${slaDays.toFixed(1)}d threshold`;
+  }
+
+  let affectedValue = step.affectedValue;
+  const raw = String(step.affectedValue || "").trim();
+  if (raw.startsWith("€")) {
+    const isMillions = raw.endsWith("M");
+    const numericPart = parseFloat(raw.replace(/[€M,]/g, ""));
+    if (!Number.isNaN(numericPart)) {
+      const baseEur = isMillions ? numericPart * 1000000 : numericPart;
+      affectedValue = formatDynamicEur(baseEur * ratio);
+    }
+  } else {
+    const match = raw.match(/^([\d,]+)\s+(.*)$/);
+    if (match) {
+      const baseCount = parseInt(match[1].replace(/,/g, ""), 10);
+      if (!Number.isNaN(baseCount)) {
+        const scaledCount = Math.max(12, Math.round(baseCount * ratio));
+        affectedValue = `${scaledCount.toLocaleString("en-US")} ${match[2]}`;
+      }
+    }
+  }
+
+  return {
+    waitDays,
+    severity,
+    badgeClass,
+    statusLabel,
+    affectedValue
+  };
+}
+
+export function renderDelayThresholdControl(state) {
+  const slaNum =
+    state && typeof state.slaThresholdDays === "number" ? state.slaThresholdDays : 3.0;
+  const slaFormatted = slaNum.toFixed(1);
+
+  return `
+    <div class="header-threshold-pill" title="Cases waiting longer than this threshold are flagged as delayed across all pages">
+      <span class="header-threshold-label">
+        Delay Threshold: <strong id="header-sla-val" style="color:var(--text-primary);">${slaFormatted}d</strong>
+      </span>
+      <input
+        type="range"
+        class="range-slider"
+        style="width:112px;"
+        min="1.5"
+        max="7.5"
+        step="0.5"
+        value="${slaNum}"
+        data-action="change-sla"
+        aria-label="Delay threshold in days"
+      />
+    </div>
+  `;
+}
+
 export function renderPageTitleBlock(title, metaText) {
   return `
     <div>

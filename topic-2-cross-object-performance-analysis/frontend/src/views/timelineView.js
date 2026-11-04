@@ -2,7 +2,10 @@
  * Subpage 6: Case Timeline
  */
 
-import { renderPageTitleBlock } from "./pageGuides.js";
+import {
+  renderDelayThresholdControl,
+  renderPageTitleBlock
+} from "./pageGuides.js?v=6";
 
 export const TIMELINE_MODES = ["delayed", "healthy", "both"];
 
@@ -86,6 +89,11 @@ function renderSwimlaneSvg(caseObj, variant, selectedEventKey) {
 
 function renderCaseCard(caseObj, variant, state) {
   const isDelayed = variant === "delayed";
+  const slaDays =
+    state && typeof state.slaThresholdDays === "number" ? state.slaThresholdDays : 3.0;
+  const slaNote = isDelayed
+    ? `&gt; ${slaDays.toFixed(1)}d threshold`
+    : `&le; ${slaDays.toFixed(1)}d threshold`;
 
   return `
     <div class="card sub-animate" style="margin-bottom:16px;">
@@ -93,7 +101,7 @@ function renderCaseCard(caseObj, variant, state) {
         <div>
           <div style="display:flex; align-items:center; gap:8px;">
             <span class="badge ${isDelayed ? "badge-red" : "badge-green"}">
-              ${isDelayed ? "Delayed" : "On-Time"} · ${caseObj.duration}
+              ${isDelayed ? "Delayed" : "On-Time"} (${slaNote}) · ${caseObj.duration}
             </span>
             <strong style="font-size:15px;">${caseObj.caseId}</strong>
           </div>
@@ -138,6 +146,7 @@ export function renderTimelineView(log, state) {
       ${renderPageTitleBlock("Case Timeline", `Individual object timelines from ${log.filename}`)}
 
       <div class="header-controls">
+        ${renderDelayThresholdControl(state)}
         <div class="segmented" role="group" aria-label="Select Example Case">
           <div id="timeline-seg-glider" class="seg-glider" style="transform: translateX(${modeIdx * 100}%);"></div>
           <button class="seg-option ${mode === "delayed" ? "active" : ""}" data-action="set-timeline-mode" data-mode="delayed">

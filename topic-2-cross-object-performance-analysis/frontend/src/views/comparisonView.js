@@ -2,7 +2,10 @@
  * Subpage 5: Compare Cases
  */
 
-import { renderPageTitleBlock } from "./pageGuides.js";
+import {
+  renderDelayThresholdControl,
+  renderPageTitleBlock
+} from "./pageGuides.js?v=6";
 
 function formatEur(num) {
   if (num >= 1000000) return `€${(num / 1000000).toFixed(2)}M`;
@@ -11,7 +14,8 @@ function formatEur(num) {
 
 export function computeComparisonMetrics(log, state) {
   const comp = log.comparison;
-  const ratio = Math.pow(3.0 / Math.max(1.0, state.slaThresholdDays), 0.78);
+  const baseSla = log.defaultSlaDays || 3.0;
+  const ratio = Math.pow(baseSla / Math.max(1.0, state.slaThresholdDays), 0.78);
   const delayedCount = Math.min(
     comp.totalClusters - 40,
     Math.max(45, Math.round(comp.baseDelayedAt3d * ratio))
@@ -49,20 +53,7 @@ export function renderComparisonView(log, state) {
       )}
 
       <div class="header-controls">
-        <span style="font-size:13px; color:var(--text-muted); font-weight:500;">
-          Delay Threshold: <strong id="cmp-sla-val" style="color:var(--text-primary);">${state.slaThresholdDays.toFixed(1)}d</strong>
-        </span>
-        <input
-          type="range"
-          class="range-slider"
-          style="width:140px;"
-          min="1.5"
-          max="7.5"
-          step="0.5"
-          value="${state.slaThresholdDays}"
-          data-action="change-sla"
-          aria-label="Delay threshold in days"
-        />
+        ${renderDelayThresholdControl(state)}
       </div>
     </div>
 

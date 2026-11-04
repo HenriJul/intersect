@@ -2,7 +2,11 @@
  * Subpage 2: Process Flow
  */
 
-import { renderPageTitleBlock } from "./pageGuides.js";
+import {
+  computeStepSlaStatus,
+  renderDelayThresholdControl,
+  renderPageTitleBlock
+} from "./pageGuides.js?v=6";
 
 function renderOrderManagementPaths(showExceptions, showChain, selectedStepId) {
   const hi = showChain;
@@ -118,9 +122,15 @@ function renderFlowDiagramSvg(log, state) {
     .map((g) => {
       const isSelected = g.id === state.selectedStepId;
       const meta = log.steps[g.id];
+      const slaInfo = computeStepSlaStatus(meta, log, state.slaThresholdDays);
       const height = g.yBottom - g.yTop;
       const midY = (g.yTop + g.yBottom) / 2;
-      const accent = meta.severity === "red" ? "var(--red)" : meta.severity === "amber" ? "var(--amber)" : "var(--blue)";
+      const accent =
+        slaInfo.severity === "red"
+          ? "var(--red)"
+          : slaInfo.severity === "amber"
+          ? "var(--amber)"
+          : "var(--blue)";
 
       const dots = g.tracksJoined
         .map((tid) => {
@@ -134,16 +144,16 @@ function renderFlowDiagramSvg(log, state) {
         <g class="flow-step-clickable" data-action="select-step" data-step-id="${g.id}">
           <rect x="${g.x - 14}" y="${g.yTop}" width="28" height="${height}" rx="10"
                 fill="${isSelected ? "var(--svg-gate-selected-fill)" : "var(--svg-gate-fill)"}"
-                stroke="${isSelected ? "var(--text-primary)" : "var(--svg-node-stroke)"}" />
+                stroke="${isSelected ? "var(--text-primary)" : accent}" />
           ${dots}
           <rect class="step-card" x="${g.x - 55}" y="${midY - 21}" width="110" height="42" rx="8"
                 fill="${isSelected ? "var(--btn-dark-bg)" : "var(--svg-node-bg)"}"
-                stroke="${isSelected ? "var(--btn-dark-bg)" : "var(--text-faint)"}"
-                stroke-width="${isSelected ? "2" : "1.2"}" />
+                stroke="${isSelected ? "var(--btn-dark-bg)" : accent}"
+                stroke-width="${isSelected ? "2" : "1.35"}" />
           <text x="${g.x}" y="${midY - 3}" text-anchor="middle" font-size="10.5" font-weight="600"
                 fill="${isSelected ? "var(--btn-dark-fg)" : "var(--text-primary)"}">${g.label}</text>
           <text x="${g.x}" y="${midY + 12}" text-anchor="middle" font-size="9.5" font-weight="600"
-                fill="${isSelected ? "#ef4444" : accent}">${g.waitTag}</text>
+                fill="${isSelected ? (slaInfo.severity === "red" ? "#f87171" : "#fbbf24") : accent}">${g.waitTag}</text>
         </g>
       `;
     })
@@ -162,6 +172,7 @@ function renderFlowDiagramSvg(log, state) {
 
 export function renderFlowBody(log, state) {
   const step = log.steps[state.selectedStepId] || log.steps[log.defaultStepId];
+  const slaInfo = computeStepSlaStatus(step, log, state.slaThresholdDays);
 
   return `
     <div class="card" style="padding:18px 20px;">
@@ -207,6 +218,10 @@ export function renderFlowBody(log, state) {
           <div style="font-size:15px; font-weight:600;">${step.avgWait}</div>
         </div>
         <div>
+          <div class="bn-stat-label">Threshold Status</div>
+          <div style="margin-top:3px;"><span class="badge ${slaInfo.badgeClass}">${slaInfo.statusLabel}</span></div>
+        </div>
+        <div>
           <div class="bn-stat-label">Main Delay Source</div>
           <div style="font-size:15px; font-weight:600;">${step.mainDelaySource}</div>
         </div>
@@ -230,6 +245,7 @@ export function renderFlowMapView(log, state) {
       ${renderPageTitleBlock("Process Flow", "Click any shared vertical step to select it")}
 
       <div class="header-controls">
+        ${renderDelayThresholdControl(state)}
         <button id="btn-toggle-exceptions" class="btn ${state.showExceptions ? "btn-dark" : ""}" data-action="toggle-exceptions">
           Show Exceptions
         </button>
