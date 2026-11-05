@@ -6,29 +6,29 @@
  * is chosen via dropdown or file upload.
  */
 
-import { getLogPayload, probePythonBackend } from "./api/ocelClient.js?v=7";
+import { getLogPayload, probePythonBackend } from "./api/ocelClient.js?v=8";
 import {
   renderSchemaTextEditorModal,
   resetStepSchemaTexts,
   saveStepSchemaTexts
-} from "./data/schemaTexts.js?v=7";
-import { renderCapacityView, renderTeamChartCard } from "./views/capacityView.js?v=7";
-import { computeComparisonMetrics, renderComparisonView } from "./views/comparisonView.js?v=7";
-import { renderDelayBody, renderDelayView } from "./views/delayView.js?v=7";
-import { renderFlowBody, renderFlowMapView } from "./views/flowMapView.js?v=7";
-import { renderOverviewBody, renderOverviewView } from "./views/overviewView.js?v=7";
+} from "./data/schemaTexts.js?v=8";
+import { renderCapacityView, renderTeamChartCard } from "./views/capacityView.js?v=8";
+import { computeComparisonMetrics, renderComparisonView } from "./views/comparisonView.js?v=8";
+import { renderDelayBody, renderDelayView } from "./views/delayView.js?v=8";
+import { renderFlowBody, renderFlowMapView } from "./views/flowMapView.js?v=8";
+import { renderOverviewBody, renderOverviewView } from "./views/overviewView.js?v=8";
 import {
   PAGE_ICONS,
   computeStepSlaStatus,
   renderPageInfoOverlay
-} from "./views/pageGuides.js?v=7";
-import { renderBrandMarkSvg, renderStarterView } from "./views/starterView.js?v=7";
+} from "./views/pageGuides.js?v=8";
+import { renderBrandMarkSvg, renderStarterView } from "./views/starterView.js?v=8";
 import {
   TIMELINE_MODES,
   renderTimelineCardsRegion,
   renderTimelineView
-} from "./views/timelineView.js?v=7";
-import { renderUploadModal } from "./views/uploadModal.js?v=7";
+} from "./views/timelineView.js?v=8";
+import { renderUploadModal } from "./views/uploadModal.js?v=8";
 
 const SUBPAGES = [
   { id: "overview", label: "Overview" },
@@ -54,6 +54,7 @@ const state = {
   selectedStepId: "create-package",
   showExceptions: false,
   showChain: false,
+  showDelayDescriptions: true,
   selectedTeamId: "warehousing",
   slaThresholdDays: 3.0,
   whatIfReductionPct: 40,
@@ -509,6 +510,23 @@ document.addEventListener("click", (e) => {
     target.classList.toggle("btn-dark", state.showChain);
     const flowRegion = document.getElementById("flow-dynamic-region");
     if (flowRegion) flowRegion.innerHTML = renderFlowBody(log, state);
+  } else if (action === "toggle-delay-descriptions") {
+    state.showDelayDescriptions = !state.showDelayDescriptions;
+    target.classList.toggle("btn-dark", state.showDelayDescriptions);
+    target.setAttribute("aria-pressed", String(state.showDelayDescriptions));
+    target.title = state.showDelayDescriptions
+      ? "Hide textual descriptions"
+      : "Show textual descriptions";
+    const labelSpan = target.querySelector("span");
+    if (labelSpan) {
+      labelSpan.textContent = state.showDelayDescriptions
+        ? "Hide Descriptions"
+        : "Show Descriptions";
+    }
+    const delayRegion = document.getElementById("delay-dynamic-region");
+    if (delayRegion) {
+      delayRegion.innerHTML = renderDelayBody(log, state);
+    }
   } else if (action === "select-team") {
     state.selectedTeamId = target.dataset.teamId;
     document.querySelectorAll(".team-item").forEach((btn) => {

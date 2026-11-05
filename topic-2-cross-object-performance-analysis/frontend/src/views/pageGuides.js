@@ -57,8 +57,8 @@ export const PAGE_GUIDES = {
         detail: "Use the 'Process Step' dropdown and 'Delay Threshold' slider in the top-right header to inspect any multi-object step."
       },
       {
-        heading: "Read the Plain-Language Wait Split",
-        detail: "Compare time spent 'Waiting for All Items' and 'Waiting for Other Objects' against 'Waiting for Team', along with plain-English explanations."
+        heading: "Read or Toggle Plain-Language Descriptions",
+        detail: "Compare time spent 'Waiting for All Items' and 'Waiting for Other Objects' against 'Waiting for Team', or click 'Hide / Show Descriptions' in the header for a compact metrics-only view."
       },
       {
         heading: "Edit Explanations for This Log Type",

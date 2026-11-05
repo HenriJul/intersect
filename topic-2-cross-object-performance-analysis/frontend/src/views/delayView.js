@@ -2,18 +2,19 @@
  * Subpage 3: Delay Breakdown
  */
 
-import { getResolvedStepTexts } from "../data/schemaTexts.js?v=7";
+import { getResolvedStepTexts } from "../data/schemaTexts.js?v=8";
 import {
   computeStepSlaStatus,
   renderDelayThresholdControl,
   renderPageTitleBlock
-} from "./pageGuides.js?v=7";
+} from "./pageGuides.js?v=8";
 
 export function renderDelayBody(log, state) {
   const step = log.steps[state.selectedStepId] || log.steps[log.defaultStepId];
   const bd = step.breakdown;
   const slaInfo = computeStepSlaStatus(step, log, state.slaThresholdDays);
   const texts = getResolvedStepTexts(log, step.id);
+  const showDescriptions = state.showDelayDescriptions !== false;
 
   return `
     <div class="card sub-animate" style="margin-bottom:18px;">
@@ -26,15 +27,21 @@ export function renderDelayBody(log, state) {
         </div>
       </div>
 
-      <div class="delay-summary-callout">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px;">
-          <div class="delay-summary-label" style="margin-bottom:0;">Why This Step Is Delayed</div>
-          <button class="btn btn-sm" style="padding:3px 9px; font-size:11.5px;" data-action="open-schema-editor">
-            Edit Explanations
-          </button>
-        </div>
-        <p class="delay-summary-text">${texts.summaryText}</p>
-      </div>
+      ${
+        showDescriptions
+          ? `
+            <div class="delay-summary-callout">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px;">
+                <div class="delay-summary-label" style="margin-bottom:0;">Why This Step Is Delayed</div>
+                <button class="btn btn-sm" style="padding:3px 9px; font-size:11.5px;" data-action="open-schema-editor">
+                  Edit Explanations
+                </button>
+              </div>
+              <p class="delay-summary-text">${texts.summaryText}</p>
+            </div>
+          `
+          : ""
+      }
 
       <div class="stacked-bar">
         ${
@@ -62,7 +69,7 @@ export function renderDelayBody(log, state) {
           <div style="font-size:19px; font-weight:700; margin-top:4px;">
             ${bd.allItemsDays}d <span style="font-size:13px; font-weight:500; color:var(--text-muted);">(${bd.allItemsPct}%)</span>
           </div>
-          <p class="delay-desc-text">${texts.allItemsDesc}</p>
+          ${showDescriptions ? `<p class="delay-desc-text">${texts.allItemsDesc}</p>` : ""}
         </div>
 
         <div class="stat-col-item">
@@ -72,7 +79,7 @@ export function renderDelayBody(log, state) {
           <div style="font-size:19px; font-weight:700; margin-top:4px;">
             ${bd.otherObjectsDays}d <span style="font-size:13px; font-weight:500; color:var(--text-muted);">(${bd.otherObjectsPct}%)</span>
           </div>
-          <p class="delay-desc-text">${texts.otherObjectsDesc}</p>
+          ${showDescriptions ? `<p class="delay-desc-text">${texts.otherObjectsDesc}</p>` : ""}
         </div>
 
         <div class="stat-col-item">
@@ -82,7 +89,7 @@ export function renderDelayBody(log, state) {
           <div style="font-size:19px; font-weight:700; margin-top:4px;">
             ${bd.teamDays}d <span style="font-size:13px; font-weight:500; color:var(--text-muted);">(${bd.teamPct}%)</span>
           </div>
-          <p class="delay-desc-text">${texts.teamDesc}</p>
+          ${showDescriptions ? `<p class="delay-desc-text">${texts.teamDesc}</p>` : ""}
         </div>
       </div>
     </div>
@@ -105,7 +112,11 @@ export function renderDelayBody(log, state) {
               <div class="progress-track">
                 <div class="progress-fill" style="width:${src.pct}%; background:${src.color};"></div>
               </div>
-              <p class="delay-desc-text" style="margin-top:6px;">${texts.delaySourceDescs[idx]}</p>
+              ${
+                showDescriptions
+                  ? `<p class="delay-desc-text" style="margin-top:6px;">${texts.delaySourceDescs[idx]}</p>`
+                  : ""
+              }
             </div>
           `
           )
@@ -122,7 +133,7 @@ export function renderDelayBody(log, state) {
           ${step.chain
             .map(
               (c, idx) => `
-              <div class="chain-box chain-box-detailed" style="${idx === 1 ? "background:var(--bg-subtle); border-color:var(--border-hover);" : ""}">
+              <div class="chain-box ${showDescriptions ? "chain-box-detailed" : ""}" style="${idx === 1 ? "background:var(--bg-subtle); border-color:var(--border-hover);" : ""}">
                 <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; width:100%;">
                   <div>
                     <div style="font-size:11px; font-weight:600; color:var(--text-muted); text-transform:uppercase;">${c.stage}</div>
@@ -130,7 +141,11 @@ export function renderDelayBody(log, state) {
                   </div>
                   <div style="font-size:12.5px; font-weight:600; color:var(--text-secondary); white-space:nowrap;">${c.metric}</div>
                 </div>
-                <p class="delay-desc-text" style="margin-top:5px;">${texts.chainDescs[idx]}</p>
+                ${
+                  showDescriptions
+                    ? `<p class="delay-desc-text" style="margin-top:5px;">${texts.chainDescs[idx]}</p>`
+                    : ""
+                }
               </div>
               ${idx < step.chain.length - 1 ? `<div class="chain-arrow">↓</div>` : ""}
             `
@@ -146,6 +161,7 @@ export function renderDelayView(log, state) {
   const step = log.steps[state.selectedStepId] || log.steps[log.defaultStepId];
   const allSteps = Object.values(log.steps);
   const slaInfo = computeStepSlaStatus(step, log, state.slaThresholdDays);
+  const showDescriptions = state.showDelayDescriptions !== false;
 
   return `
     <div class="page-header">
@@ -165,6 +181,15 @@ export function renderDelayView(log, state) {
             )
             .join("")}
         </select>
+        <button
+          id="btn-toggle-delay-descriptions"
+          class="btn ${showDescriptions ? "btn-dark" : ""}"
+          data-action="toggle-delay-descriptions"
+          aria-pressed="${showDescriptions}"
+          title="${showDescriptions ? "Hide textual descriptions" : "Show textual descriptions"}"
+        >
+          <span>${showDescriptions ? "Hide Descriptions" : "Show Descriptions"}</span>
+        </button>
         <button class="btn" data-action="open-schema-editor" title="Edit textual descriptions for all logs sharing this schema">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M12 20h9"/>
