@@ -1,4 +1,7 @@
-# Software Lab Starter
+# Software Lab Starter — Topic 2: Intersect (M1 Prototype)
+
+- **Live M1 Prototype (Topic 2):** [lab-intersect.vercel.app](https://lab-intersect.vercel.app)
+- **Topic 2 Documentation & Usage Guide:** [`topic-2-cross-object-performance-analysis/README.md`](topic-2-cross-object-performance-analysis/README.md)
 
 Starter repo for the Software Lab. Contains the datasets and the Python code
 to load them, organized by seminar topic.
