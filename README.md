@@ -64,4 +64,5 @@ it into flat pandas DataFrames:
 - `objects_table(ocel)` — one row per object
 - `relations_table(ocel)` — event-to-object relationships
 
+
 Use these as your starting point for exploration and analysis.
