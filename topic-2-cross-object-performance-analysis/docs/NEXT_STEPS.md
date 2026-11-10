@@ -1,99 +1,131 @@
-# Intersect — Architecture Assumptions, M1 Scope & M2–M4 Roadmap
+# Intersect — User Personas, Architecture Assumptions, M1 Scope & M2–M4 Roadmap
 
-This document specifies **what is live vs. precomputed in Milestone 1**, the **formal OPerA & statistical assumptions**, **remaining technical uncertainties**, our **prioritized Milestone 2–4 engineering roadmap with measurable exit criteria**, and our **validation plan**.
+This document specifies **who uses Intersect and how they use it**, **why the UI translates technical OPerA/statistical concepts into plain business language**, **what is live vs. precomputed in Milestone 1**, **methodological assumptions & uncertainties**, our **prioritized Milestone 2–4 roadmap**, and our **validation plan**.
 
 ---
 
-## 1. What Is Real vs. Precomputed / Simulated in M1
+## 1. Target User Types & How They Use Intersect
+
+Intersect is intentionally designed for **non-technical business and operational stakeholders** rather than academic process-mining specialists. In the UI, technical terms are translated into everyday operational language (`Waiting for All Items` instead of *OPerA Pooling Time*, `Waiting for Other Objects` instead of *OPerA Lagging Time*, `Waiting for Team` instead of *Post-Synchronization Queue*, and `3.4× slower` instead of raw test statistics), while the underlying numbers are anchored in the OCEL 2.0 datasets.
+
+### Persona 1: Elena Vance — Warehouse & Fulfillment Manager (*Operational Line Manager*)
+- **Background:** Non-technical operations lead managing `Warehousing` (7 staff) and `Shipment` (6 staff) in Order Management, or the `Warehouse Department` in Procure-to-Pay.
+- **Core Problem:** Gets blamed in weekly meetings when `Create Package` takes `3.8 days` on average, even though her staff pack boxes quickly once all items are physically present.
+- **How Elena Uses Intersect:**
+  1. Selects **Order Management** and sees `Create Package` (`3.8 days` avg wait) at the top of **Overview**.
+  2. Clicks **View Delay Breakdown** to show that `2.4d (62%)` is spent **Waiting for All Items** (1 out-of-stock item holding 5–6 already-picked items on the shelf) and `0.6d (16%)` is **Waiting for Other Objects**, while only `0.8d (22%)` is **Waiting for Team**.
+  3. Opens **Case Timeline** (`Package p-660016` vs. `Package p-660007`) to show a concrete example where picked items waited 10.0 days for a reordered item.
+
+### Persona 2: Marcus Weber — Accounts Payable & Billing Lead (*Downstream Process Owner*)
+- **Background:** Non-technical finance lead overseeing `Perform Two-Way Match`, `Execute Payment`, and customer order billing (`Pay Order`).
+- **Core Problem:** Experiences the downstream end of every cascade—suppliers escalate unpaid invoices (`€1.42M` delayed), and executives ask why payments take `5.3 days` even though Finance processes matched invoices promptly.
+- **How Marcus Uses Intersect:**
+  1. Selects **Procure-to-Pay** and opens **Process Flow** to show how 4 separate object lanes must align at `Execute Payment`.
+  2. Opens **Delay Breakdown** on `Perform Two-Way Match` (`1.9d` wait) and `Execute Payment` (`5.3d` wait) to show that split supplier shipments (`2.5 goods receipts per PO`) block invoice matching.
+  3. Uses **Case Timeline** (`Show Both`) to contrast a delayed split-delivery payment (`Payment payment:807`, `9.2 days wait`) against a healthy single-delivery payment (`Payment payment:6`, `1.5 days wait`).
+
+### Persona 3: Priya Nair — Category & Procurement Manager (*Upstream Coordinator*)
+- **Background:** Business user managing purchase requisitions, vendor selection, PO approvals (`Approve Purchase Order`), and stock reordering (`Reorder Item`).
+- **Core Problem:** Needs to see how upstream exceptions (`Delegate PR Approval` or `Item Out of Stock`) ripple into downstream warehouse and finance delays.
+- **How Priya Uses Intersect:**
+  1. Uses **Show Exceptions** and **Highlight Delay Chain** on **Process Flow** to trace rework loops and upstream-to-downstream propagation.
+  2. Reviews the **Upstream & Downstream Impact** chain on **Delay Breakdown**.
+  3. Uses **Compare Cases** (`Top Delay Factors`) to see which conditions (`3+ Partial Goods Receipts on PO`, `Delegated Requisition Approval`, `Plant 4000 / Group 005 Vendors`) cause the largest slowdowns.
+
+### Persona 4: Stefan Lindner — COO / VP of Supply Chain (*Executive Decision-Maker*)
+- **Background:** Cross-functional executive who needs to decide in 5 minutes whether a bottleneck requires **adding staff capacity** or **changing handoff/batching policies**.
+- **How Stefan Uses Intersect:**
+  1. Uses the global **Delay Threshold** slider (`1.5d–7.5d`) in the top-right header to evaluate how many packages/payments breach different company SLA targets.
+  2. Checks **Team Workload** to see how shared teams split capacity across competing steps and when utilization spikes above `85%`.
+  3. Uses the **Estimate Improvement** slider on **Compare Cases** to estimate how many delayed cases and euros (`€`) return on-time when the main delay driver is reduced.
+
+### Persona 5: Lukas Meyer — Operational Excellence Lead (*Workshop Facilitator*)
+- **Background:** Semi-technical analyst who prepares cross-departmental improvement workshops and adapts the tool to new company datasets.
+- **How Lukas Uses Intersect:**
+  1. Uses the **`i` (How to use this page)** overlays to onboard stakeholders during live meetings.
+  2. Uses **Edit Explanations** on **Delay Breakdown** to write domain-specific, plain-language explanations that automatically persist for any OCEL log sharing the same schema (`objectTypes` and `eventTypes`).
+  3. Uses **Hide / Show Descriptions** to switch between full explanatory text and a compact metrics view.
+
+---
+
+## 2. What Is Real vs. Precomputed / Simulated in M1
 
 | Component / Feature | M1 Status | How It Works Today | Target Milestone for Live Generic Computation |
 |---|---|---|---|
 | **OCEL 2.0 Structural Ingestion (`/api/v1/logs`)** | **Live (Python)** | `backend/server.py` uses `ocel_common/ocel_loader.py` to parse `datasets/order-management.json` (21,008 events, 10,840 objects) and `datasets/ocel2-p2p.json` (14,671 events, 9,543 objects) and serialize `LogSummaryDTO` (`backend/api_contract.py`). | **M1 (Done)** |
 | **Global Delay Threshold Cohort Counts (`1.5d–7.5d`)** | **Real Empirical Cohorts (JS)** | `frontend/src/data/empiricalCohortData.js` embeds the exact sorted per-event wait distributions extracted from `order-management.json` ($n = 1,106$ multi-item package pools) and `ocel2-p2p.json` ($n = 1,166$ payment executions) and evaluates `wait > slaDays` directly. | **M2** (computed dynamically in Python for any uploaded OCEL) |
-| **OPerA Wait Decomposition (`Delay Breakdown`)** | **Precomputed from Real OCELs** | Pooling, lagging, and post-synchronization queue metrics (`2.4d + 0.6d = 3.0d` sync + `0.8d` queue on `Create Package`; `0.85d + 1.65d = 2.5d` sync + `2.8d` queue on `Execute Payment`) were computed offline from the two datasets and stored in `demoPayloads.js`. | **M2** |
-| **Statistical Significance Layer (`Compare Cases`)** | **Precomputed Non-Parametric Tests** | Sample sizes ($n$), 95% bootstrap confidence intervals (1,000 resamples), Cliff's $\delta$ effect sizes, and Benjamini–Hochberg FDR-corrected Mann–Whitney U $p$-values were computed offline on the two OCEL logs. | **M2** |
-| **What-If Scenario Simulator (`Compare Cases`)** | **Empirical CDF Shift** | Evaluates how many delayed events ($w > \text{threshold}$) in `EMPIRICAL_EVENT_WAITS` drop to $w \cdot (1 - r \cdot s) \le \text{threshold}$ under reduction $r$ of primary blocker share $s$. | **M3** (stratified cohort counterfactual engine) |
+| **Wait Decomposition (`Delay Breakdown`)** | **Precomputed from Real OCELs** | Waiting for All Items (`2.4d`), Waiting for Other Objects (`0.6d`), and Waiting for Team (`0.8d`) on `Create Package` (and `0.85d + 1.65d + 2.8d = 5.3d` on `Execute Payment`) were computed offline from the two datasets and stored in `demoPayloads.js`. | **M2** |
+| **Delay Factor Comparisons (`Compare Cases`)** | **Precomputed from Real OCELs** | Multipliers (`3.4× slower`, `2.9× slower`) and with/without wait averages were computed offline on the two OCEL logs and verified with non-parametric Mann–Whitney U tests and Cliff's $\delta$ effect sizes. | **M2** |
+| **Estimate Improvement Simulator (`Compare Cases`)** | **Empirical Wait Distribution Shift** | Evaluates how many delayed events ($w > \text{threshold}$) in `EMPIRICAL_EVENT_WAITS` drop to $\le \text{threshold}$ under the selected percentage reduction. | **M3** (stratified cohort counterfactual engine) |
 | **Case Timeline Swimlanes (`Case Timeline`)** | **Real OCEL 2.0 Instances** | Uses verified object IDs, timestamps, and actors (`Package p-660016`, `Package p-660007`, `Payment payment:807`, `Payment payment:6`) from the JSON logs. | **M2** (search & select any case ID from log) |
-| **Schema-Matched Explanations (`schemaTexts.js`)** | **Live in `localStorage`** | Keyed on the canonical OCEL 2.0 schema signature (`ocelObjectTypes` + `ocelEventTypes`) and persisted across sessions. | **M3** (persisted in backend SQLite / JSON store) |
-| **File Upload (`POST /api/v1/logs/upload`)** | **Prototype Stub** | Accepts `.json`/`.jsonocel`/`.sqlite` files, displays a confirmation banner, and maps to the two reference datasets for M1 review. | **M3** |
+| **Schema-Matched Explanations (`schemaTexts.js`)** | **Live in `localStorage`** | Keyed on the log's schema signature and persisted across browser sessions. | **M3** (persisted in backend SQLite / JSON store) |
+| **File Upload (`POST /api/v1/logs/upload`)** | **Prototype Stub** | Accepts `.json`/`.jsonocel`/`.sqlite` files and maps to the two reference datasets for M1 review. | **M3** |
 
 ---
 
-## 2. Methodological & Data Assumptions
+## 3. Methodological & Data Assumptions (Under the Hood)
 
 1. **OPerA Synchronization Decomposition ([Park et al., 2022](https://ar5iv.labs.arxiv.org/html/2204.10662)):**
-   - For a shared convergence event $e$ and each participating prerequisite object $o \in O(e)$, let $a(o)$ denote the completion timestamp of $o$'s immediately preceding event.
-   - **Pooling Time ($\text{pool}_{\tau}(e)$):** $\max_{o \in O_{\tau}(e)} a(o) - \min_{o \in O_{\tau}(e)} a(o)$ across multiple instances of the same object type $\tau$ (e.g., the ~6.8 `items` bundled into one `package`).
-   - **Lagging Time ($\text{lag}(e)$):** Additional cross-type arrival gap between distinct prerequisite object types.
-   - **Synchronization Time ($\text{sync}(e)$):** $\max_{o \in O_{\text{prereq}}(e)} a(o) - \min_{o \in O_{\text{prereq}}(e)} a(o) = \text{pool}(e) + \text{lag}(e)$.
-   - **Post-Synchronization Queue Time ($\text{queue}(e)$):** $t(e) - \max_{o \in O_{\text{prereq}}(e)} a(o)$, capturing resource/team contention after all prerequisite objects are ready.
+   - For a shared convergence event $e$ and each participating prerequisite object $o \in O(e)$, let $a(o)$ denote the completion timestamp of $o$'s immediately preceding event:
+     - **Waiting for All Items (*Pooling Time*):** $\max_{o \in O_{\tau}(e)} a(o) - \min_{o \in O_{\tau}(e)} a(o)$ across multiple instances of the same object type $\tau$ (e.g., the ~6.8 `items` bundled into one `package`).
+     - **Waiting for Other Objects (*Lagging Time*):** Additional cross-type arrival gap between distinct prerequisite object types.
+     - **Waiting for Team (*Post-Synchronization Queue*):** $t(e) - \max_{o \in O_{\text{prereq}}(e)} a(o)$, capturing staff/resource contention after all prerequisite objects are ready.
 2. **Completion-Only Timestamps (Service Time $\approx 0$):**
-   - Both `order-management.json` and `ocel2-p2p.json` record single atomic timestamps per event (no separate `start` / `complete` lifecycle transitions). We therefore assume activity execution time is negligible relative to multi-day inter-event waiting times ($\text{sojourn time} \approx \text{waiting time}$).
+   - Both `order-management.json` and `ocel2-p2p.json` record single atomic timestamps per event (no separate `start` / `complete` lifecycle transitions). We therefore assume activity execution time is negligible relative to multi-day inter-event waiting times.
 3. **Event-Level Aggregation (Preventing Convergence Inflation):**
-   - Because `create package` touches 14.5 objects on average (1 package, ~6.8 items, orders, products, employees, customer), computing averages per object would inflate the same wall-clock wait ~14×. All gate wait distributions and cohort counts are aggregated **once per convergence event instance** ($n = 1,106$ multi-item packages; $n = 1,166$ payments).
+   - Because `create package` touches 14.5 objects on average, computing averages per object would inflate the same wall-clock wait ~14×. All wait distributions and cohort counts are aggregated **once per convergence event instance** ($n = 1,106$ multi-item packages; $n = 1,166$ payments).
 4. **Prerequisite vs. Context / Master Object Filtering:**
-   - Static catalog and master objects (`products` and `customers` in Order Management; `material` catalog entries in P2P) do not undergo predecessor flow activities prior to every gate. They are filtered via E2O relationship qualifiers so they do not introduce artificial synchronization spans.
-5. **Composite Bottleneck Ranking Score:**
-   - Overview ranks shared steps by a **Composite Business Impact Score** combining total object-wait days ($\text{mean wait} \times \text{event volume}$) and downstream rework/dunning amplification, while providing a one-click toggle to sort strictly by **Raw Average Wait Time**.
+   - Static catalog and master objects (`products` and `customers` in Order Management; `material` catalog entries in P2P) do not undergo predecessor flow activities prior to every gate and are filtered so they do not introduce artificial synchronization spans.
+5. **Overview Bottleneck Ranking:**
+   - Overview ranks shared steps by overall operational impact (combining wait duration, event volume, and downstream ripple effects), placing `Create Package` (`3.8d` avg across `1,106` packages blocking downstream shipping and billing) at `#1`.
 
 ---
 
-## 3. Remaining Technical Uncertainties & Risks
+## 4. Remaining Technical Uncertainties & Risks
 
 1. **Resource / Team Inference on Logs Without Explicit Staff Objects:**
-   - `order-management.json` models staff as first-class `employees` objects (`Warehousing`, `Shipment`, `Sales`), whereas `ocel2-p2p.json` does not include an employee object type (departments are inferred from activity domains). In M2/M3, the engine must support three fallback modes: (a) explicit resource object types, (b) event-level `org:resource` / `org:role` attributes, and (c) activity-cluster grouping when resource metadata is absent.
-2. **Automatic Layered DAG Layout for Arbitrary OC-DFGs:**
-   - M1 uses curated horizontal swimlanes (`tracks`) for the two reference processes. Arbitrary OCEL logs with 10+ object types can produce dense edge crossings. In M2, we will implement a Sugiyama-style layered layout that ranks active flow object types into horizontal tracks and collapses static lookup object types into badge annotations.
+   - `order-management.json` models staff as first-class `employees` objects (`Warehousing`, `Shipment`, `Sales`), whereas `ocel2-p2p.json` records departments via activity/resource attributes. In M2/M3, the backend engine will support three fallback modes: (a) explicit resource object types, (b) event-level `org:resource` / `org:role` attributes, and (c) activity-cluster grouping when resource metadata is absent.
+2. **Automatic Swimlane Layout for Arbitrary OCEL Logs:**
+   - M1 uses curated horizontal lanes (`tracks`) for the two reference processes. In M2/M3, we will implement an automatic layered layout that places active lifecycle object types into horizontal lanes and filters static lookup object types automatically.
 3. **Confounded Downstream Cascades vs. Direct Causality:**
-   - Observational event logs exhibit confounding (e.g., a large B2B order or specific vendor plant `Plant 4000` can simultaneously increase both upstream PO approval time and downstream invoice matching delay). In M3, downstream impact claims will be stratified by order size and vendor/plant cohorts.
+   - Observational event logs exhibit confounding (e.g., order size or vendor plant `Plant 4000` can simultaneously affect both upstream approval time and downstream invoice matching). In M3, impact simulations will stratify by order size and vendor group.
 4. **Large Log Scalability (`~300 MB` `.jsonocel` / `.sqlite`):**
-   - In-memory pandas joins over millions of E2O relations can exceed interactive latency budgets (`< 2s`). M3 will pre-index predecessor event timestamps per `(event_id, object_id)` on ingestion and cache the decomposed gate tables.
+   - M3 will pre-index predecessor event timestamps per `(event_id, object_id)` on ingestion and cache decomposed step tables so interactive queries stay under `< 2s`.
 
 ---
 
-## 4. Prioritized Roadmap (M2 → M4) & Exit Criteria
+## 5. Prioritized Roadmap (M2 → M4) & Exit Criteria
 
-### Milestone 2 — Live Python OPerA & Statistical Engine (Priority 1)
+### Milestone 2 — Live Python Cross-Object Analysis Engine (Priority 1)
 - **Deliverables:**
-  1. Implement `backend/opera_engine.py` to compute per-event `pooling_days`, `lagging_days`, `sync_days`, and `queue_days` dynamically from any loaded OCEL 2.0 file.
-  2. Implement `backend/stats_engine.py` to run two-sided Mann–Whitney U tests, 1,000-sample bootstrap 95% CIs, Cliff's $\delta$, and Benjamini–Hochberg correction across candidate delay factors (suppressing factors with $n < 30$).
+  1. Implement `backend/opera_engine.py` to compute per-event item-pooling, cross-object lagging, and team-queue wait times dynamically from any loaded OCEL 2.0 file.
+  2. Implement `backend/stats_engine.py` to automatically filter out small-sample noise ($n < 30$) and rank the top delay factors using Mann–Whitney U tests and Cliff's $\delta$ under the hood while surfacing clean multiplier badges (`3.4× slower`) in the UI.
   3. Serve full view payloads from `GET /api/v1/logs/{log_id}/analysis` and wire `ocelClient.js` to consume live backend computations first.
 - **Exit Criteria:**
-  - Deleting hardcoded numbers from `demoPayloads.js` still reproduces the exact `Create Package` (`3.80d`) and `Execute Payment` (`5.27d`) decompositions within $\pm 0.05\text{d}$ via API, with API response time $< 800\text{ ms}$ on both reference logs.
+  - Deleting hardcoded numbers from `demoPayloads.js` reproduces the `Create Package` (`3.8d`) and `Execute Payment` (`5.3d`) breakdowns within $\pm 0.05\text{d}$ via API in $< 800\text{ ms}$.
 
-### Milestone 3 — Generic OC-DFG Layout & Live File Upload (Priority 2)
+### Milestone 3 — Generic Swimlane Layout & Live File Upload (Priority 2)
 - **Deliverables:**
   1. Implement `POST /api/v1/logs/upload` for arbitrary `.json`, `.jsonocel`, and `.sqlite` OCEL 2.0 files.
-  2. Replace log-specific SVG path helpers (`renderOrderManagementPaths` / `renderP2PPaths`) with a fully data-driven Sugiyama swimlane + intersection gate layout generator.
-  3. Add an interactive Case Picker on `Case Timeline` so users can search and inspect any object/event instance in the uploaded log.
+  2. Replace log-specific SVG path helpers with a data-driven swimlane and shared-step layout generator.
+  3. Add a simple case selector on `Case Timeline` so users can inspect any object instance in an uploaded log.
 - **Exit Criteria:**
-  - Uploading an unseen third OCEL 2.0 dataset (e.g., `sf-fire-ems` subset or synthetic benchmark log) renders all 6 views with zero console/runtime errors and valid OPerA decompositions in $< 3\text{ s}$.
+  - Uploading an unseen OCEL 2.0 dataset renders all 6 views cleanly with zero runtime errors in $< 3\text{ s}$.
 
-### Milestone 4 — Stratified Counterfactuals, Export & Polish (Priority 3)
+### Milestone 4 — Stratified What-If Simulation & Shared Templates (Priority 3)
 - **Deliverables:**
-  1. Upgrade the What-If simulator to use stratified historical cohort deltas (controlling for order size / vendor group).
+  1. Upgrade the `Estimate Improvement` simulator to use stratified historical cohorts.
   2. Persist custom schema-matched explanations in a backend store with JSON export/import so teams can share domain templates.
-  3. Full WCAG 2.1 AA keyboard navigation and automated end-to-end Playwright + pytest CI suite.
 - **Exit Criteria:**
-  - 100% pass rate on backend unit/contract tests and frontend render/interaction tests; validated with 3 non-technical test users completing the 5 Slide 27 diagnostic questions in $< 8$ minutes.
+  - 100% pass rate on backend unit/contract tests and frontend smoke tests; validated with non-technical test users answering all 5 Slide 27 questions in $< 8$ minutes.
 
 ---
 
-## 5. Validation Plan
+## 6. Validation Plan
 
 1. **Synthetic Ground-Truth OCEL Verification (Unit Level):**
-   - Construct a minimal synthetic OCEL 2.0 log (10 orders, 30 items, 10 packages, 2 staff) with analytically known pooling (`2.00d`), lagging (`1.00d`), and post-sync queue (`0.50d`) times, and assert exact equality in `pytest`.
+   - Construct a minimal synthetic OCEL 2.0 log (10 orders, 30 items, 10 packages, 2 staff) with analytically known item-wait (`2.00d`), object-wait (`1.00d`), and team-queue (`0.50d`) times, and assert exact equality in `pytest`.
 2. **Golden Regression Suite on Reference Logs (Integration Level):**
-   - Assert that the Python engine reproduces our verified golden benchmarks on `order-management.json` (`Create Package`: $n=1,128$ events, $1,106$ multi-item pools, mean total wait $3.80\text{d}$, median $3.26\text{d}$) and `ocel2-p2p.json` (`Execute Payment`: $n=1,166$ events, mean wait $5.27\text{d}$, median $4.70\text{d}$).
-3. **Automated Render & Contract Smoke Suite:**
-   - Run `tests/smoke_test.mjs` across all 6 views, both logs, multiple threshold settings (`1.5d`, `3.0d`, `7.5d`), and both description modes, plus contract verification between `backend/api_contract.py` and `backend/server.py`.
-
----
-
-## 6. Resolved M1 Review Audit Log
-
-- **Empirical Threshold Cohorts:** Replaced the synthetic power-law formula with exact empirical wait-time arrays (`frontend/src/data/empiricalCohortData.js`, $n = 1,106$ and $n = 1,166$).
-- **Timeline Badge Consistency:** Separated **cross-object gate wait** (`0.9d gate wait ≤ 3.0d threshold`) from **end-to-end case span** (`4.6d end-to-end`) on `Package p-660007` and `Payment payment:6`, eliminating the apparent threshold contradiction.
-- **Bottleneck Ranking Transparency:** Documented the Composite Business Impact Score on Overview and added an interactive `Rank by: Impact Score | Avg Wait Time` toggle.
-- **Statistical Rigor (Q2):** Added sample sizes ($n$), 95% bootstrap CIs, Cliff's $\delta$ effect sizes, and BH-corrected Mann–Whitney U $p$-values to `Compare Cases` and `Overview`.
-- **End-to-End Context & Decision Closure:** Added guided scenario cards on the starter screen, a persistent `Active Bottleneck Focus` bar across `Team Workload`, `Compare Cases`, and `Case Timeline`, inline event inspection inside each swimlane card, and a closing `Recommended Decision` card on `Case Timeline`.
+   - Assert that the Python engine reproduces our verified benchmarks on `order-management.json` (`Create Package`: $n=1,106$ multi-item pools, mean wait $3.80\text{d}$) and `ocel2-p2p.json` (`Execute Payment`: $n=1,166$ events, mean wait $5.27\text{d}$).
+3. **Automated Render & Empirical Cohort Smoke Suite:**
+   - Run `node tests/smoke_test.mjs` across all 6 views, both logs, multiple threshold settings (`1.5d`, `3.0d`, `7.5d`), and both description modes.
