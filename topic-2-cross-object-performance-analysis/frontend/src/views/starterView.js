@@ -4,7 +4,7 @@
  * file selection prompt, Upload Event Log button, and Example Log dropdown.
  */
 
-import { DEMO_LOGS, RAW_DEMO_LOGS } from "../data/demoPayloads.js?v=11";
+import { DEMO_LOGS, RAW_DEMO_LOGS } from "../data/demoPayloads.js?v=12";
 
 export function renderBrandMarkSvg(px = 22) {
   return `

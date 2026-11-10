@@ -9,11 +9,24 @@
  *   (the combination of tracked object types and shared event types).
  * - Defines the default explanations for the example schemas (Order Management & Procure-to-Pay)
  *   and auto-generates sensible plain-language fallbacks for any unseen OCEL schema.
- * - Persists user edits in localStorage per schema signature so any log sharing the same
- *   schema automatically inherits customized explanations across the entire application.
+ * - Keeps custom edits in an in-memory session store so any log sharing the same schema
+ *   inherits customized explanations across all 6 pages during the active session, while
+ *   reloading the page cleanly reapplies the default descriptions for the two example logs.
  */
 
-const STORAGE_KEY = "intersect-schema-texts-v2";
+const LEGACY_STORAGE_KEYS = ["intersect-schema-texts-v1", "intersect-schema-texts-v2"];
+let sessionSchemaProfiles = {};
+
+// Clear any previously cached localStorage overrides so page reloads always start on defaults
+try {
+  if (typeof window !== "undefined" && window.localStorage) {
+    for (const key of LEGACY_STORAGE_KEYS) {
+      window.localStorage.removeItem(key);
+    }
+  }
+} catch {
+  // Ignore storage restrictions
+}
 
 export const EDITOR_TABS = [
   { id: "flow", label: "Overview & Flow" },
@@ -534,20 +547,11 @@ export const DEFAULT_SCHEMA_PROFILES = {
 };
 
 function loadAllSavedSchemaProfiles() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : {};
-  } catch {
-    return {};
-  }
+  return sessionSchemaProfiles;
 }
 
 function writeAllSavedSchemaProfiles(profiles) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(profiles));
-  } catch {
-    // Ignore storage quota or privacy-mode errors
-  }
+  sessionSchemaProfiles = { ...profiles };
 }
 
 function humanizeId(id) {

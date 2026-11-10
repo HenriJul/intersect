@@ -7,7 +7,7 @@
  *   (e.g. GitHub Pages, static HTTP server, or offline peer review).
  */
 
-import { DEMO_LOGS } from "../data/demoPayloads.js?v=11";
+import { DEMO_LOGS } from "../data/demoPayloads.js?v=12";
 
 const DEFAULT_API_BASE = "/api/v1";
 

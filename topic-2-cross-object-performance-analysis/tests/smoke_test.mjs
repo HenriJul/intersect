@@ -3,22 +3,24 @@
  */
 
 import assert from "node:assert/strict";
-import { DEMO_LOGS, RAW_DEMO_LOGS } from "../frontend/src/data/demoPayloads.js?v=11";
+import { DEMO_LOGS, RAW_DEMO_LOGS } from "../frontend/src/data/demoPayloads.js?v=12";
 import {
   computeEmpiricalCohort,
   evaluateEmpiricalWhatIf
-} from "../frontend/src/data/empiricalCohortData.js?v=11";
+} from "../frontend/src/data/empiricalCohortData.js?v=12";
 import {
   getResolvedLog,
-  renderSchemaTextEditorModal
-} from "../frontend/src/data/schemaTexts.js?v=11";
-import { renderCapacityView } from "../frontend/src/views/capacityView.js?v=11";
-import { renderComparisonView } from "../frontend/src/views/comparisonView.js?v=11";
-import { renderDelayView } from "../frontend/src/views/delayView.js?v=11";
-import { renderFlowMapView } from "../frontend/src/views/flowMapView.js?v=11";
-import { renderOverviewView } from "../frontend/src/views/overviewView.js?v=11";
-import { renderStarterView } from "../frontend/src/views/starterView.js?v=11";
-import { renderTimelineView } from "../frontend/src/views/timelineView.js?v=11";
+  renderSchemaTextEditorModal,
+  resetAllSchemaExplanations,
+  saveFullSchemaExplanations
+} from "../frontend/src/data/schemaTexts.js?v=12";
+import { renderCapacityView } from "../frontend/src/views/capacityView.js?v=12";
+import { renderComparisonView } from "../frontend/src/views/comparisonView.js?v=12";
+import { renderDelayView } from "../frontend/src/views/delayView.js?v=12";
+import { renderFlowMapView } from "../frontend/src/views/flowMapView.js?v=12";
+import { renderOverviewView } from "../frontend/src/views/overviewView.js?v=12";
+import { renderStarterView } from "../frontend/src/views/starterView.js?v=12";
+import { renderTimelineView } from "../frontend/src/views/timelineView.js?v=12";
 
 const starterHtml = renderStarterView();
 assert.ok(starterHtml.includes("Intersect"), "Starter view should render brand name");
@@ -34,7 +36,16 @@ for (const logId of ["order-management", "ocel2-p2p"]) {
   const log = DEMO_LOGS[logId];
   const resolvedCheck = getResolvedLog(rawLog);
   assert.ok(log.title.length > 3, `Resolved log title populated for ${logId}`);
+  assert.equal(resolvedCheck.isSchemaCustomized, false, `Default profile is active on boot for ${logId}`);
   assert.ok(resolvedCheck.steps[log.defaultStepId].summaryText.length > 20, "Resolved step summaryText populated");
+
+  // Verify live session editing works and resetting restores the default schema profile
+  saveFullSchemaExplanations(rawLog, log.defaultStepId, {
+    processTitle: "Custom Session Title"
+  });
+  assert.equal(DEMO_LOGS[logId].title, "Custom Session Title", "Live session edit updates resolved log title");
+  resetAllSchemaExplanations(rawLog);
+  assert.equal(DEMO_LOGS[logId].isSchemaCustomized, false, "Reset restores default schema profile");
 
   // Verify empirical cohorts are strictly non-increasing as threshold rises
   const c15 = computeEmpiricalCohort(logId, 1.5, log.comparison.baseStalledEur, log.defaultSlaDays);

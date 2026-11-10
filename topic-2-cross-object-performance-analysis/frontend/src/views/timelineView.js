@@ -6,7 +6,7 @@ import {
   renderDelayThresholdControl,
   renderEditExplanationsButton,
   renderPageTitleBlock
-} from "./pageGuides.js?v=11";
+} from "./pageGuides.js?v=12";
 
 export const TIMELINE_MODES = ["delayed", "healthy", "both"];
 

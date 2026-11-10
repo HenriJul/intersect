@@ -6,31 +6,31 @@
  * is chosen via dropdown or file upload.
  */
 
-import { getLogPayload, probePythonBackend } from "./api/ocelClient.js?v=11";
-import { DEMO_LOGS, RAW_DEMO_LOGS } from "./data/demoPayloads.js?v=11";
+import { getLogPayload, probePythonBackend } from "./api/ocelClient.js?v=12";
+import { DEMO_LOGS, RAW_DEMO_LOGS } from "./data/demoPayloads.js?v=12";
 import {
   pageToEditorTab,
   renderSchemaTextEditorModal,
   resetAllSchemaExplanations,
   saveFullSchemaExplanations
-} from "./data/schemaTexts.js?v=11";
-import { renderCapacityView, renderTeamChartCard } from "./views/capacityView.js?v=11";
-import { computeComparisonMetrics, renderComparisonView } from "./views/comparisonView.js?v=11";
-import { renderDelayBody, renderDelayView } from "./views/delayView.js?v=11";
-import { renderFlowBody, renderFlowMapView } from "./views/flowMapView.js?v=11";
-import { renderOverviewBody, renderOverviewView } from "./views/overviewView.js?v=11";
+} from "./data/schemaTexts.js?v=12";
+import { renderCapacityView, renderTeamChartCard } from "./views/capacityView.js?v=12";
+import { computeComparisonMetrics, renderComparisonView } from "./views/comparisonView.js?v=12";
+import { renderDelayBody, renderDelayView } from "./views/delayView.js?v=12";
+import { renderFlowBody, renderFlowMapView } from "./views/flowMapView.js?v=12";
+import { renderOverviewBody, renderOverviewView } from "./views/overviewView.js?v=12";
 import {
   PAGE_ICONS,
   computeStepSlaStatus,
   renderPageInfoOverlay
-} from "./views/pageGuides.js?v=11";
-import { renderBrandMarkSvg, renderStarterView } from "./views/starterView.js?v=11";
+} from "./views/pageGuides.js?v=12";
+import { renderBrandMarkSvg, renderStarterView } from "./views/starterView.js?v=12";
 import {
   TIMELINE_MODES,
   renderTimelineCardsRegion,
   renderTimelineView
-} from "./views/timelineView.js?v=11";
-import { renderUploadModal } from "./views/uploadModal.js?v=11";
+} from "./views/timelineView.js?v=12";
+import { renderUploadModal } from "./views/uploadModal.js?v=12";
 
 const SUBPAGES = [
   { id: "overview", label: "Overview" },
