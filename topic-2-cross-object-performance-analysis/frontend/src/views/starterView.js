@@ -18,7 +18,7 @@ export function renderBrandMarkSvg(px = 22) {
 export function renderStarterView() {
   return `
     <section class="starter-screen" aria-label="Select Event Log">
-      <div class="starter-content">
+      <div class="starter-content" style="max-width:520px;">
         <div class="starter-brand">
           <span class="starter-brand-icon">
             ${renderBrandMarkSvg(31)}
@@ -26,7 +26,12 @@ export function renderStarterView() {
           <h1 class="starter-brand-name">Intersect</h1>
         </div>
 
-        <p class="starter-prompt">Select an event log to begin</p>
+        <p class="starter-prompt" style="margin-bottom:8px; font-weight:600; color:var(--text-primary); font-size:16px;">
+          Cross-Object Performance &amp; Bottleneck Explorer
+        </p>
+        <p style="margin:0 0 22px; font-size:13.5px; color:var(--text-secondary); max-width:460px; line-height:1.5;">
+          Spot where business workflows stall when orders, items, packages, purchase orders, and invoices must synchronize at shared steps.
+        </p>
 
         <div class="starter-actions">
           <button class="btn btn-dark starter-upload-btn" data-action="open-upload">
@@ -38,7 +43,7 @@ export function renderStarterView() {
             <span>Upload Event Log</span>
           </button>
 
-          <div class="starter-divider"><span>or</span></div>
+          <div class="starter-divider"><span>or choose an example dataset</span></div>
 
           <div class="starter-select-wrap">
             <select
@@ -48,10 +53,38 @@ export function renderStarterView() {
               aria-label="Select an example event log"
             >
               <option value="" selected disabled>Select example event log…</option>
-              <option value="order-management">Order Management</option>
-              <option value="ocel2-p2p">Procure-to-Pay</option>
+              <option value="order-management">Order Management (Start Here — 21,008 events)</option>
+              <option value="ocel2-p2p">Procure-to-Pay (14,671 events)</option>
             </select>
           </div>
+        </div>
+
+        <div class="starter-scenario-grid" aria-label="Guided Diagnostic Scenarios">
+          <button type="button" class="starter-scenario-card" data-action="quick-select-log" data-log-id="order-management">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%;">
+              <span class="badge badge-red">Scenario 1 · Recommended</span>
+              <span style="font-size:11.5px; color:var(--text-muted); font-weight:600;">order-management.json</span>
+            </div>
+            <div style="font-weight:700; font-size:14px; color:var(--text-primary); margin-top:7px;">
+              Order Management — Why are packages late?
+            </div>
+            <div style="font-size:12px; color:var(--text-secondary); margin-top:3px; line-height:1.45;">
+              Follow an order from placement to delivery: see how 1 out-of-stock item holds 5–6 picked items on the shelf for 3.8 days.
+            </div>
+          </button>
+
+          <button type="button" class="starter-scenario-card" data-action="quick-select-log" data-log-id="ocel2-p2p">
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; width:100%;">
+              <span class="badge badge-amber">Scenario 2 · P2P</span>
+              <span style="font-size:11.5px; color:var(--text-muted); font-weight:600;">ocel2-p2p.json</span>
+            </div>
+            <div style="font-weight:700; font-size:14px; color:var(--text-primary); margin-top:7px;">
+              Procure-to-Pay — Why is €1.42M in invoices stalled?
+            </div>
+            <div style="font-size:12px; color:var(--text-secondary); margin-top:3px; line-height:1.45;">
+              Trace how delegated PR approvals and 2.5 partial goods receipts per PO create a 5.3-day payment bottleneck.
+            </div>
+          </button>
         </div>
       </div>
     </section>

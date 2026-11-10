@@ -12,6 +12,27 @@ const STORAGE_KEY = "intersect-schema-texts-v1";
 
 export function getSchemaSignature(log) {
   if (!log) return "unknown-schema";
+  const objTypes = (
+    Array.isArray(log.ocelObjectTypes) && log.ocelObjectTypes.length > 0
+      ? log.ocelObjectTypes
+      : (log.tracks || []).map((t) => t.id)
+  )
+    .slice()
+    .sort()
+    .join("+");
+  const evTypes = (
+    Array.isArray(log.ocelEventTypes) && log.ocelEventTypes.length > 0
+      ? log.ocelEventTypes
+      : Object.keys(log.steps || {})
+  )
+    .slice()
+    .sort()
+    .join("+");
+  return `ocel2-schema:${objTypes}::${evTypes}`;
+}
+
+function getLegacySchemaSignature(log) {
+  if (!log) return "unknown-schema";
   const objTypes = (log.tracks || [])
     .map((t) => t.id)
     .slice()
@@ -26,6 +47,12 @@ export function getSchemaSignature(log) {
 
 export function getSchemaReadableSummary(log) {
   if (!log) return "";
+  if (Array.isArray(log.ocelObjectTypes) && log.ocelObjectTypes.length > 0) {
+    const evCount = Array.isArray(log.ocelEventTypes)
+      ? log.ocelEventTypes.length
+      : Object.keys(log.steps || {}).length;
+    return `OCEL 2.0 objectTypes: [${log.ocelObjectTypes.join(", ")}] · ${evCount} eventTypes`;
+  }
   const objNames = (log.tracks || []).map((t) => t.label).join(", ");
   const stepCount = Object.keys(log.steps || {}).length;
   return `Object types: ${objNames} · ${stepCount} shared steps`;
@@ -51,11 +78,12 @@ function writeAllSavedSchemaProfiles(profiles) {
 export function getResolvedStepTexts(log, stepId) {
   const step = log.steps[stepId] || log.steps[log.defaultStepId];
   const signature = getSchemaSignature(log);
+  const legacySig = getLegacySchemaSignature(log);
   const allProfiles = loadAllSavedSchemaProfiles();
   const custom =
-    allProfiles[signature] && allProfiles[signature][step.id]
-      ? allProfiles[signature][step.id]
-      : null;
+    (allProfiles[signature] && allProfiles[signature][step.id]) ||
+    (allProfiles[legacySig] && allProfiles[legacySig][step.id]) ||
+    null;
 
   const bd = step.breakdown;
 
@@ -117,15 +145,18 @@ export function saveStepSchemaTexts(log, stepId, newTexts) {
 export function resetStepSchemaTexts(log, stepId) {
   const step = log.steps[stepId] || log.steps[log.defaultStepId];
   const signature = getSchemaSignature(log);
+  const legacySig = getLegacySchemaSignature(log);
   const allProfiles = loadAllSavedSchemaProfiles();
 
-  if (allProfiles[signature] && allProfiles[signature][step.id]) {
-    delete allProfiles[signature][step.id];
-    if (Object.keys(allProfiles[signature]).length === 0) {
-      delete allProfiles[signature];
+  for (const sig of [signature, legacySig]) {
+    if (allProfiles[sig] && allProfiles[sig][step.id]) {
+      delete allProfiles[sig][step.id];
+      if (Object.keys(allProfiles[sig]).length === 0) {
+        delete allProfiles[sig];
+      }
     }
-    writeAllSavedSchemaProfiles(allProfiles);
   }
+  writeAllSavedSchemaProfiles(allProfiles);
 }
 
 function escapeHtml(str) {

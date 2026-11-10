@@ -6,29 +6,29 @@
  * is chosen via dropdown or file upload.
  */
 
-import { getLogPayload, probePythonBackend } from "./api/ocelClient.js?v=8";
+import { getLogPayload, probePythonBackend } from "./api/ocelClient.js?v=9";
 import {
   renderSchemaTextEditorModal,
   resetStepSchemaTexts,
   saveStepSchemaTexts
-} from "./data/schemaTexts.js?v=8";
-import { renderCapacityView, renderTeamChartCard } from "./views/capacityView.js?v=8";
-import { computeComparisonMetrics, renderComparisonView } from "./views/comparisonView.js?v=8";
-import { renderDelayBody, renderDelayView } from "./views/delayView.js?v=8";
-import { renderFlowBody, renderFlowMapView } from "./views/flowMapView.js?v=8";
-import { renderOverviewBody, renderOverviewView } from "./views/overviewView.js?v=8";
+} from "./data/schemaTexts.js?v=9";
+import { renderCapacityView, renderTeamChartCard } from "./views/capacityView.js?v=9";
+import { computeComparisonMetrics, renderComparisonView } from "./views/comparisonView.js?v=9";
+import { renderDelayBody, renderDelayView } from "./views/delayView.js?v=9";
+import { renderFlowBody, renderFlowMapView } from "./views/flowMapView.js?v=9";
+import { renderOverviewBody, renderOverviewView } from "./views/overviewView.js?v=9";
 import {
   PAGE_ICONS,
   computeStepSlaStatus,
   renderPageInfoOverlay
-} from "./views/pageGuides.js?v=8";
-import { renderBrandMarkSvg, renderStarterView } from "./views/starterView.js?v=8";
+} from "./views/pageGuides.js?v=9";
+import { renderBrandMarkSvg, renderStarterView } from "./views/starterView.js?v=9";
 import {
   TIMELINE_MODES,
   renderTimelineCardsRegion,
   renderTimelineView
-} from "./views/timelineView.js?v=8";
-import { renderUploadModal } from "./views/uploadModal.js?v=8";
+} from "./views/timelineView.js?v=9";
+import { renderUploadModal } from "./views/uploadModal.js?v=9";
 
 const SUBPAGES = [
   { id: "overview", label: "Overview" },
@@ -51,6 +51,7 @@ const state = {
   logId: null, // Starts unselected so the user lands on the default starter page
   darkMode: loadSavedDarkPreference(),
   activePage: "overview",
+  overviewSortBy: "impact",
   selectedStepId: "create-package",
   showExceptions: false,
   showChain: false,
@@ -61,10 +62,11 @@ const state = {
   timelineMode: "delayed",
   selectedEventKey: null,
   selectedEventInfo: null,
+  uploadNotice: null,
   pageInfoOpen: false,
   uploadModalOpen: false,
   schemaEditorOpen: false,
-  apiStatus: { connected: false, mode: "Static Demo" }
+  apiStatus: { connected: false, mode: "Static Demo · Precomputed OCEL Metrics", liveLogs: null }
 };
 
 let mountedShellMode = null; // "starter" | "workspace"
@@ -126,13 +128,14 @@ function initAppFrame() {
   `;
 }
 
-function selectLog(newLogId) {
+function selectLog(newLogId, { uploadedFilename = null } = {}) {
   if (!newLogId) {
     state.logId = null;
     state.pageInfoOpen = false;
     state.schemaEditorOpen = false;
     state.selectedEventKey = null;
     state.selectedEventInfo = null;
+    state.uploadNotice = null;
     return;
   }
 
@@ -145,9 +148,34 @@ function selectLog(newLogId) {
   state.selectedStepId = log.defaultStepId;
   state.selectedTeamId = log.capacity.defaultTeamId;
   state.slaThresholdDays = log.defaultSlaDays;
+  state.showExceptions = false;
+  state.showChain = false;
   state.schemaEditorOpen = false;
   state.selectedEventKey = null;
   state.selectedEventInfo = null;
+  state.uploadNotice = uploadedFilename
+    ? {
+        filename: uploadedFilename,
+        logTitle: log.title,
+        eventCount: log.eventCount,
+        objectCount: log.objectCount
+      }
+    : null;
+}
+
+function renderUploadNoticeHtml() {
+  if (!state.uploadNotice) return "";
+  const n = state.uploadNotice;
+  return `
+    <div class="upload-confirm-banner sub-animate" role="status">
+      <div>
+        <strong>Uploaded <code>${n.filename}</code></strong> — mapped to <strong>${n.logTitle}</strong> (${n.eventCount.toLocaleString("en-US")} events · ${n.objectCount.toLocaleString("en-US")} objects) for M1 prototype preview.
+      </div>
+      <button type="button" class="btn btn-sm" style="padding:3px 9px; font-size:11.5px;" data-action="dismiss-upload-notice">
+        Dismiss
+      </button>
+    </div>
+  `;
 }
 
 function renderWorkspaceShellHtml() {
@@ -187,7 +215,7 @@ function renderWorkspaceShellHtml() {
           <select id="dataset-select" class="sidebar-select" data-action="switch-log-dropdown">
             <option value="order-management" ${state.logId === "order-management" ? "selected" : ""}>Order Management</option>
             <option value="ocel2-p2p" ${state.logId === "ocel2-p2p" ? "selected" : ""}>Procure-to-Pay</option>
-            <option value="">No log selected</option>
+            <option value="">← Return to Starter Screen</option>
           </select>
         </div>
 
@@ -200,15 +228,17 @@ function renderWorkspaceShellHtml() {
           <span>Upload Event Log</span>
         </button>
 
-        <div id="api-status-row" class="api-indicator">
-          <span class="dot ${state.apiStatus.connected ? "green" : "blue"}" style="width:6px; height:6px;"></span>
-          <span>${state.apiStatus.connected ? "Python API Connected" : "Static Demo Mode"}</span>
+        <div id="api-status-row" class="api-indicator" title="Analytics are precomputed from order-management.json and ocel2-p2p.json; Python server supplies live structural OCEL metadata">
+          <span class="dot ${state.apiStatus.connected ? "green" : "blue"}" style="width:6px; height:6px; flex-shrink:0;"></span>
+          <span>${state.apiStatus.connected ? "Backend Reachable · Demo Data" : "Static Demo · Precomputed Data"}</span>
         </div>
       </div>
     </aside>
 
     <main class="main-canvas">
+      <div id="upload-notice-root" class="page-wrap"></div>
       <div id="page-root" class="page-wrap"></div>
+      <footer id="provenance-footer" class="page-wrap provenance-footer"></footer>
     </main>
   `;
 }
@@ -258,8 +288,29 @@ function syncSidebarUI() {
   const apiRow = document.getElementById("api-status-row");
   if (apiRow) {
     apiRow.innerHTML = `
-      <span class="dot ${state.apiStatus.connected ? "green" : "blue"}" style="width:6px; height:6px;"></span>
-      <span>${state.apiStatus.connected ? "Python API Connected" : "Static Demo Mode"}</span>
+      <span class="dot ${state.apiStatus.connected ? "green" : "blue"}" style="width:6px; height:6px; flex-shrink:0;"></span>
+      <span>${state.apiStatus.connected ? "Backend Reachable · Demo Data" : "Static Demo · Precomputed Data"}</span>
+    `;
+  }
+
+  const noticeRoot = document.getElementById("upload-notice-root");
+  if (noticeRoot) {
+    noticeRoot.innerHTML = renderUploadNoticeHtml();
+  }
+
+  const footerEl = document.getElementById("provenance-footer");
+  if (footerEl && state.logId) {
+    const log = getLogPayload(state.logId);
+    const liveMatch =
+      state.apiStatus.liveLogs &&
+      state.apiStatus.liveLogs.find((l) => l.log_id === state.logId);
+    const relNote =
+      liveMatch && liveMatch.relation_count
+        ? ` · ${liveMatch.relation_count.toLocaleString("en-US")} live E2O relations verified via Python API`
+        : "";
+    footerEl.innerHTML = `
+      <span>Precomputed OPerA &amp; empirical cohort metrics from <code>datasets/${log.filename}</code> (${log.eventCount.toLocaleString("en-US")} events · ${log.objectCount.toLocaleString("en-US")} objects${relNote})</span>
+      <span>Event-level aggregation · Completion timestamps (service ≈ 0) · BH-corrected Mann–Whitney U</span>
     `;
   }
 }
@@ -334,13 +385,18 @@ function updateComparisonNumbersInPlace() {
     if (el) el.textContent = txt;
   };
 
-  setTxt("cmp-meta-text", `On-time vs. delayed (> ${state.slaThresholdDays.toFixed(1)} days wait)`);
+  setTxt(
+    "cmp-meta-text",
+    `Empirical cohorts: on-time vs. delayed (> ${state.slaThresholdDays.toFixed(1)}d gate wait · n = ${log.comparison.totalClusters.toLocaleString("en-US")})`
+  );
   setTxt("header-sla-val", `${state.slaThresholdDays.toFixed(1)}d`);
+  setTxt("cmp-target-sla", `${state.slaThresholdDays.toFixed(1)}d`);
   setTxt("cmp-ontime-count", m.onTimeCount);
   setTxt("cmp-ontime-pct", m.onTimePct);
   setTxt("cmp-delayed-count", m.delayedCount);
   setTxt("cmp-delayed-pct", m.delayedPct);
   setTxt("cmp-stalled-eur", m.stalledEur);
+  setTxt("cmp-ripple-sub", m.scaledRipplesStr);
   setTxt("cmp-whatif-pct", `-${state.whatIfReductionPct}%`);
   setTxt("cmp-recovered", m.recoveredCases);
   setTxt("cmp-unblocked", m.unblockedEur);
@@ -371,15 +427,19 @@ function updateSlaAcrossActivePage() {
     const region = document.getElementById("delay-dynamic-region");
     if (region) region.innerHTML = renderDelayBody(log, state);
   } else if (state.activePage === "teams") {
-    const activeTeam =
-      log.capacity.teams.find((t) => t.id === state.selectedTeamId) || log.capacity.teams[0];
-    const chartRegion = document.getElementById("team-chart-region");
-    if (chartRegion) chartRegion.innerHTML = renderTeamChartCard(activeTeam, log, state);
+    renderPage({ animate: false });
   } else if (state.activePage === "compare") {
-    updateComparisonNumbersInPlace();
+    renderPage({ animate: false });
   } else if (state.activePage === "timeline") {
-    const region = document.getElementById("timeline-cards-region");
-    if (region) region.innerHTML = renderTimelineCardsRegion(log, state);
+    renderPage({ animate: false });
+  }
+}
+
+function syncStepAndTeam(log, stepId) {
+  state.selectedStepId = stepId;
+  const step = log.steps[stepId];
+  if (step && step.responsibleTeamId) {
+    state.selectedTeamId = step.responsibleTeamId;
   }
 }
 
@@ -399,6 +459,18 @@ document.addEventListener("click", (e) => {
   if (action === "go-starter") {
     selectLog(null);
     syncAppView();
+    return;
+  }
+
+  if (action === "quick-select-log") {
+    selectLog(target.dataset.logId);
+    syncAppView({ animatePage: true });
+    return;
+  }
+
+  if (action === "dismiss-upload-notice") {
+    state.uploadNotice = null;
+    syncSidebarUI();
     return;
   }
 
@@ -481,6 +553,15 @@ document.addEventListener("click", (e) => {
     return;
   }
 
+  if (action === "set-overview-sort") {
+    state.overviewSortBy = target.dataset.sort || "impact";
+    const ovRegion = document.getElementById("overview-dynamic-region");
+    if (ovRegion) {
+      ovRegion.innerHTML = renderOverviewBody(log, state);
+    }
+    return;
+  }
+
   if (action === "goto-page") {
     const nextPage = target.dataset.page;
     if (nextPage === state.activePage) return;
@@ -488,12 +569,12 @@ document.addEventListener("click", (e) => {
     syncSidebarUI();
     renderPage({ animate: true });
   } else if (action === "jump-step-page") {
-    state.selectedStepId = target.dataset.stepId;
+    syncStepAndTeam(log, target.dataset.stepId);
     state.activePage = target.dataset.page;
     syncSidebarUI();
     renderPage({ animate: true });
   } else if (action === "select-step") {
-    state.selectedStepId = target.dataset.stepId;
+    syncStepAndTeam(log, target.dataset.stepId);
     const flowRegion = document.getElementById("flow-dynamic-region");
     if (flowRegion) {
       flowRegion.innerHTML = renderFlowBody(log, state);
@@ -580,11 +661,15 @@ document.addEventListener("change", (e) => {
     const lowerName = file.name.toLowerCase();
     const mappedLogId = lowerName.includes("p2p") ? "ocel2-p2p" : "order-management";
     state.uploadModalOpen = false;
-    selectLog(mappedLogId);
+    selectLog(mappedLogId, { uploadedFilename: file.name });
     syncAppView({ animatePage: true });
-  } else if (target.dataset.action === "select-step-dropdown" && state.logId) {
-    state.selectedStepId = target.value;
+  } else if (target.dataset.action === "select-focus-step" && state.logId) {
     const log = getLogPayload(state.logId);
+    syncStepAndTeam(log, target.value);
+    renderPage({ animate: false });
+  } else if (target.dataset.action === "select-step-dropdown" && state.logId) {
+    const log = getLogPayload(state.logId);
+    syncStepAndTeam(log, target.value);
     const step = log.steps[state.selectedStepId] || log.steps[log.defaultStepId];
     const slaInfo = computeStepSlaStatus(step, log, state.slaThresholdDays);
     const metaEl = document.getElementById("delay-meta-text");
@@ -598,8 +683,8 @@ document.addEventListener("change", (e) => {
       renderPage({ animate: false });
     }
   } else if (target.dataset.action === "select-step-in-editor" && state.logId) {
-    state.selectedStepId = target.value;
     const log = getLogPayload(state.logId);
+    syncStepAndTeam(log, target.value);
     const step = log.steps[state.selectedStepId] || log.steps[log.defaultStepId];
     const slaInfo = computeStepSlaStatus(step, log, state.slaThresholdDays);
     const stepSelect = document.getElementById("step-select");
@@ -638,6 +723,19 @@ document.addEventListener("keydown", (e) => {
     state.uploadModalOpen = false;
     state.schemaEditorOpen = false;
     syncOverlays();
+    return;
+  }
+
+  if (e.key === "Enter" || e.key === " ") {
+    const target = e.target && e.target.closest ? e.target.closest("[data-action]") : null;
+    if (
+      target &&
+      (target.dataset.action === "select-step" ||
+        target.dataset.action === "select-timeline-event")
+    ) {
+      e.preventDefault();
+      target.click();
+    }
   }
 });
 

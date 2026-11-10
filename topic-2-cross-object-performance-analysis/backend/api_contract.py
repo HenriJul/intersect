@@ -11,18 +11,22 @@ from typing import Any
 
 @dataclass
 class LogSummaryDTO:
-    """Metadata summary for an ingested OCEL 2.0 event log."""
+    """Metadata summary for an ingested OCEL 2.0 event log (`/api/v1/logs`)."""
 
     log_id: str
     title: str
     filename: str
-    domain_subtitle: str
+    available: bool
     event_count: int
     object_count: int
     relation_count: int
-    time_span: str
-    object_types: list[dict[str, Any]]
-    activities: list[str]
+    object_type_counts: dict[str, int]
+    activity_types: list[str]
+    domain_subtitle: str = ""
+    time_span: str = ""
+
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
 
 
 @dataclass

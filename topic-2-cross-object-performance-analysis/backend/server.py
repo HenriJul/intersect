@@ -23,7 +23,10 @@ FRONTEND_DIR = TOPIC_DIR / "frontend"
 
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+if str(TOPIC_DIR) not in sys.path:
+    sys.path.insert(0, str(TOPIC_DIR))
 
+from backend.api_contract import LogSummaryDTO  # noqa: E402
 from ocel_common.ocel_loader import (  # noqa: E402
     ORDER_MANAGEMENT_PATH,
     P2P_PATH,
@@ -35,7 +38,7 @@ _SUMMARY_CACHE: dict[str, dict] = {}
 
 
 def _build_live_log_summary(log_id: str, path: Path, title: str) -> dict:
-    """Compute live structural metadata from an OCEL 2.0 JSON dataset."""
+    """Compute live structural metadata from an OCEL 2.0 JSON dataset using LogSummaryDTO."""
     if log_id in _SUMMARY_CACHE:
         return _SUMMARY_CACHE[log_id]
 
@@ -44,20 +47,21 @@ def _build_live_log_summary(log_id: str, path: Path, title: str) -> dict:
 
     ocel = load_ocel(path)
     objs = objects_table(ocel)
-    type_counts = objs["ocel:type"].value_counts().to_dict()
+    type_counts = {str(k): int(v) for k, v in objs["ocel:type"].value_counts().to_dict().items()}
     relation_count = sum(len(e.get("relationships", [])) for e in ocel.get("events", []))
 
-    summary = {
-        "log_id": log_id,
-        "title": title,
-        "filename": path.name,
-        "available": True,
-        "event_count": len(ocel.get("events", [])),
-        "object_count": len(objs),
-        "relation_count": relation_count,
-        "object_type_counts": type_counts,
-        "activity_types": [et["name"] for et in ocel.get("eventTypes", [])],
-    }
+    dto = LogSummaryDTO(
+        log_id=log_id,
+        title=title,
+        filename=path.name,
+        available=True,
+        event_count=len(ocel.get("events", [])),
+        object_count=len(objs),
+        relation_count=relation_count,
+        object_type_counts=type_counts,
+        activity_types=[et["name"] for et in ocel.get("eventTypes", [])],
+    )
+    summary = dto.to_dict()
     _SUMMARY_CACHE[log_id] = summary
     return summary
 

@@ -2,6 +2,8 @@
  * Sidebar Page Icons, Title + Info Button Header Helper, and Page-Specific Guide Overlays.
  */
 
+import { computeEmpiricalCohort } from "../data/empiricalCohortData.js?v=9";
+
 export const PAGE_ICONS = {
   overview: `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>`,
   flow: `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="6" r="2.5"/><circle cx="5" cy="18" r="2.5"/><circle cx="19" cy="12" r="2.5"/><path d="M7.5 6h3.5a3 3 0 0 1 3 3v0a3 3 0 0 0 2.5 3"/><path d="M7.5 18h3.5a3 3 0 0 0 3-3v0a3 3 0 0 1 2.5-3"/></svg>`,
@@ -18,15 +20,15 @@ export const PAGE_GUIDES = {
     steps: [
       {
         heading: "Set Your Global Delay Threshold",
-        detail: "Use the 'Delay Threshold' slider in the top-right header to define what wait time counts as a breach across all pages."
+        detail: "Use the 'Delay Threshold' slider in the top-right header to evaluate empirical delayed cohort counts across all 1,106 / 1,166 cases."
       },
       {
-        heading: "Review Ranked Bottlenecks",
-        detail: "The top 3 bottlenecks are ranked by average cross-object wait time, with color dots and impact scaling to your threshold."
+        heading: "Review Ranked Bottlenecks (Impact Score or Avg Wait)",
+        detail: "By default, bottlenecks are ranked by Composite Business Impact (Wait × Volume × Downstream Cascade). Use the 'Sort' buttons above the list to switch between Impact Score and Raw Avg Wait."
       },
       {
         heading: "Drill Into a Bottleneck",
-        detail: "Click 'View in Process Flow' or 'View Delay Breakdown' on any row to inspect that step directly."
+        detail: "Click 'View in Process Flow' or 'View Delay Breakdown' on any row to lock that step as your active focus across the workspace."
       }
     ]
   },
@@ -36,7 +38,7 @@ export const PAGE_GUIDES = {
     steps: [
       {
         heading: "Select Any Shared Step",
-        detail: "Click any vertical pill spanning multiple lanes (e.g. Create Package or Execute Payment) to focus it."
+        detail: "Click (or press Enter/Space on) any vertical pill spanning multiple lanes (e.g. Create Package or Execute Payment) to focus it."
       },
       {
         heading: "Compare Against Delay Threshold",
@@ -50,7 +52,7 @@ export const PAGE_GUIDES = {
   },
   delays: {
     title: "Delay Breakdown",
-    purpose: "Understand whether a shared step is slow due to missing objects or an overloaded team, and customize explanations for your log type.",
+    purpose: "Decompose a shared step into OPerA pooling, cross-object lagging, and post-sync team queue waiting.",
     steps: [
       {
         heading: "Switch Process Step & Threshold",
@@ -58,11 +60,11 @@ export const PAGE_GUIDES = {
       },
       {
         heading: "Read or Toggle Plain-Language Descriptions",
-        detail: "Compare time spent 'Waiting for All Items' and 'Waiting for Other Objects' against 'Waiting for Team', or click 'Hide / Show Descriptions' in the header for a compact metrics-only view."
+        detail: "Compare 'Waiting for All Items' (OPerA pooling) and 'Waiting for Other Objects' (OPerA lagging) against 'Waiting for Team' (post-sync queue), or click 'Hide / Show Descriptions' in the header."
       },
       {
-        heading: "Edit Explanations for This Log Type",
-        detail: "Click 'Edit Explanations' to open the schema text editor overlay. Custom descriptions are saved to this log's schema (its object and event types) and automatically reused whenever a matching OCEL is loaded."
+        heading: "Edit Explanations for This OCEL Schema",
+        detail: "Click 'Edit Explanations' to customize plain-language descriptions keyed to this log's OCEL 2.0 objectTypes + eventTypes signature."
       }
     ]
   },
@@ -71,52 +73,52 @@ export const PAGE_GUIDES = {
     purpose: "See how shared teams split their capacity across competing workflows and where delayed backlogs pile up.",
     steps: [
       {
-        heading: "Choose a Team on the Left",
-        detail: "Click Warehousing, Shipment, Finance, or Procurement to inspect that group's workload distribution."
+        heading: "Follow Your Active Focus Step",
+        detail: "The top focus bar highlights the team responsible for your selected bottleneck step, or lets you switch focus steps on the fly."
       },
       {
-        heading: "Compare Load vs. Delayed Backlog",
+        heading: "Compare Load vs. Empirical Delayed Backlog",
         detail: "Grey bars show team utilization (%) while the red curve tracks delayed cases exceeding your header 'Delay Threshold'."
       },
       {
         heading: "Inspect Peak Backlog Cases",
-        detail: "Click 'View Case Timeline' beneath the chart to examine an individual delayed case."
+        detail: "Click 'Compare Cases' or 'View Case Timeline' beneath the chart to move from team capacity to cohort comparison."
       }
     ]
   },
   compare: {
     title: "Compare Cases",
-    purpose: "Contrast on-time cases against delayed cases and estimate the benefit of reducing the main delay.",
+    purpose: "Contrast on-time vs. delayed cohorts with non-parametric significance tests and an empirical what-if simulator.",
     steps: [
       {
-        heading: "Adjust the Global Delay Threshold",
-        detail: "Drag the 'Delay Threshold' slider in the top-right to redefine what counts as a delayed case across the entire app."
+        heading: "Adjust the Empirical Delay Threshold",
+        detail: "Drag the 'Delay Threshold' slider in the top-right to recompute exact on-time and delayed cohort counts from the event log."
       },
       {
-        heading: "Compare Top Delay Factors",
-        detail: "Red vs. green bars show how much longer cases wait when a specific condition (like an out-of-stock item) occurs."
+        heading: "Inspect Statistical Significance (95% CI, Cliff's δ, p_BH)",
+        detail: "Each factor reports cohort sizes (n), 95% bootstrap confidence intervals, Cliff's δ effect size, and Benjamini–Hochberg adjusted Mann–Whitney U significance."
       },
       {
-        heading: "Estimate Improvement",
-        detail: "Move the reduction slider on the right to preview how many cases and euros would move back on track."
+        heading: "Run the Empirical What-If Simulator",
+        detail: "Move the reduction slider on the right to evaluate how many delayed events cross back below your threshold when the primary delay factor is reduced."
       }
     ]
   },
   timeline: {
     title: "Case Timeline",
-    purpose: "Verify cross-object delays on concrete real-world examples from the event log.",
+    purpose: "Verify cross-object delays on concrete OCEL 2.0 instances and close with a quantified operational decision.",
     steps: [
       {
-        heading: "Switch Between Examples",
-        detail: "Use the top-right tabs to view a 'Delayed Example', an 'On-Time Example', or 'Show Both' together."
+        heading: "Compare Gate Wait vs. End-to-End Duration",
+        detail: "Each card badge compares the case's cross-object gate wait directly against your active 'Delay Threshold' alongside its total end-to-end span."
       },
       {
-        heading: "Spot the Shaded Wait Window",
-        detail: "Each row is one individual object; the shaded red band highlights where early objects sat waiting on late ones."
+        heading: "Click Any Event Dot for Inline Inspection",
+        detail: "Click (or press Enter/Space on) any colored dot along a lane to view its exact timestamp and actor directly inside that case card's header."
       },
       {
-        heading: "Inspect Individual Events",
-        detail: "Click any colored dot along a row to see its exact timestamp and responsible employee or department below."
+        heading: "Review the Recommended Decision",
+        detail: "Use the closing Recommendation Card at the bottom of the page to translate the timeline evidence into a concrete operational action."
       }
     ]
   }
@@ -130,39 +132,42 @@ export function formatDynamicEur(num) {
 export function computeOverviewSlaMetrics(log, slaDays = 3.0) {
   const comp = log.comparison;
   const baseSla = log.defaultSlaDays || 3.0;
-  const ratio = Math.pow(baseSla / Math.max(1.0, slaDays), 0.78);
-  const delayedCount = Math.min(
-    comp.totalClusters - 40,
-    Math.max(45, Math.round(comp.baseDelayedAt3d * ratio))
-  );
-  const stalledEur = comp.baseStalledEur * (delayedCount / comp.baseDelayedAt3d);
+  const cohort = computeEmpiricalCohort(log.logId, slaDays, comp.baseStalledEur, baseSla);
   const unitLabel = log.logId === "order-management" ? "delayed packages" : "delayed payments";
 
   return {
-    delayedCount,
-    stalledEur,
-    delayedValueStr: formatDynamicEur(stalledEur),
-    delayedSubStr: `${delayedCount.toLocaleString("en-US")} ${unitLabel} (> ${slaDays.toFixed(1)}d)`
+    delayedCount: cohort.delayedCount,
+    onTimeCount: cohort.onTimeCount,
+    totalCount: cohort.totalCount,
+    stalledEur: cohort.stalledEur,
+    delayedValueStr: formatDynamicEur(cohort.stalledEur),
+    delayedSubStr: `${cohort.delayedCount.toLocaleString("en-US")} of ${cohort.totalCount.toLocaleString("en-US")} ${unitLabel} (> ${slaDays.toFixed(1)}d)`
   };
 }
 
 export function computeStepSlaStatus(step, log, slaDays = 3.0) {
   const waitDays = step.breakdown ? step.breakdown.totalDays : parseFloat(step.avgWait) || 0;
   const baseSla = (log && log.defaultSlaDays) || 3.0;
-  const ratio = Math.pow(baseSla / Math.max(1.0, slaDays), 0.72);
+  const cohort = log
+    ? computeEmpiricalCohort(log.logId, slaDays, log.comparison.baseStalledEur, baseSla)
+    : { delayedCount: 1, baseDelayedCount: 1 };
+  const ratio = cohort.delayedCount / Math.max(1, cohort.baseDelayedCount);
 
   let severity = "blue";
   let badgeClass = "badge-green";
-  let statusLabel = `Within ${slaDays.toFixed(1)}d threshold`;
+  let statusLabel = `Avg ${waitDays.toFixed(1)}d ≤ ${slaDays.toFixed(1)}d threshold`;
+  let gateTag = `${waitDays.toFixed(1)}d (≤ ${slaDays.toFixed(1)}d)`;
 
   if (waitDays >= slaDays) {
     severity = "red";
     badgeClass = "badge-red";
-    statusLabel = `Exceeds ${slaDays.toFixed(1)}d threshold`;
+    statusLabel = `Avg ${waitDays.toFixed(1)}d > ${slaDays.toFixed(1)}d threshold`;
+    gateTag = `${waitDays.toFixed(1)}d (> ${slaDays.toFixed(1)}d)`;
   } else if (waitDays >= slaDays * 0.65) {
     severity = "amber";
     badgeClass = "badge-amber";
-    statusLabel = `Near ${slaDays.toFixed(1)}d threshold`;
+    statusLabel = `Avg ${waitDays.toFixed(1)}d near ${slaDays.toFixed(1)}d threshold`;
+    gateTag = `${waitDays.toFixed(1)}d (≤ ${slaDays.toFixed(1)}d)`;
   }
 
   let affectedValue = step.affectedValue;
@@ -179,7 +184,7 @@ export function computeStepSlaStatus(step, log, slaDays = 3.0) {
     if (match) {
       const baseCount = parseInt(match[1].replace(/,/g, ""), 10);
       if (!Number.isNaN(baseCount)) {
-        const scaledCount = Math.max(12, Math.round(baseCount * ratio));
+        const scaledCount = Math.max(8, Math.round(baseCount * ratio));
         affectedValue = `${scaledCount.toLocaleString("en-US")} ${match[2]}`;
       }
     }
@@ -190,8 +195,45 @@ export function computeStepSlaStatus(step, log, slaDays = 3.0) {
     severity,
     badgeClass,
     statusLabel,
+    gateTag,
     affectedValue
   };
+}
+
+export function renderFocusStepBanner(log, state, { contextNote = "" } = {}) {
+  const step = log.steps[state.selectedStepId] || log.steps[log.defaultStepId];
+  const allSteps = Object.values(log.steps);
+  const slaDays =
+    state && typeof state.slaThresholdDays === "number"
+      ? state.slaThresholdDays
+      : log.defaultSlaDays || 3.0;
+  const slaInfo = computeStepSlaStatus(step, log, slaDays);
+
+  return `
+    <div class="focus-context-bar">
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <span class="focus-chip-label">Active Bottleneck Focus</span>
+        <select class="select-input" style="padding:4px 9px; font-size:12.5px; font-weight:600;" data-action="select-focus-step" aria-label="Active bottleneck focus step">
+          ${allSteps
+            .map(
+              (s) =>
+                `<option value="${s.id}" ${s.id === step.id ? "selected" : ""}>${s.name} (${s.avgWait} avg)</option>`
+            )
+            .join("")}
+        </select>
+        <span class="badge ${slaInfo.badgeClass}">${slaInfo.statusLabel}</span>
+        <span style="font-size:12px; color:var(--text-secondary);">
+          Primary Blocker: <strong>${step.mainDelaySource}</strong> · Team: <strong>${step.responsibleTeamName || "Shared Staff"}</strong>
+        </span>
+      </div>
+      <div style="display:flex; align-items:center; gap:8px;">
+        ${contextNote ? `<span style="font-size:11.5px; color:var(--text-muted);">${contextNote}</span>` : ""}
+        <button class="btn btn-sm" data-action="goto-page" data-page="delays">
+          Step Breakdown
+        </button>
+      </div>
+    </div>
+  `;
 }
 
 export function renderDelayThresholdControl(state) {

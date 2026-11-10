@@ -3,9 +3,11 @@
  */
 
 import {
+  computeOverviewSlaMetrics,
   renderDelayThresholdControl,
+  renderFocusStepBanner,
   renderPageTitleBlock
-} from "./pageGuides.js?v=6";
+} from "./pageGuides.js?v=9";
 
 function renderTimelineChartSvg(timeline, slaRatio = 1.0) {
   const width = 620;
@@ -89,12 +91,13 @@ export function renderTeamChartCard(activeTeam, log, state) {
   const baseSla = (log && log.defaultSlaDays) || 3.0;
   const slaDays =
     state && typeof state.slaThresholdDays === "number" ? state.slaThresholdDays : baseSla;
-  const slaRatio = Math.pow(baseSla / Math.max(1.0, slaDays), 0.65);
+  const ov = computeOverviewSlaMetrics(log, slaDays);
+  const slaRatio = ov.delayedCount / Math.max(1, log.comparison.baseDelayedAt3d);
 
   return `
     <div class="card sub-animate">
       <div class="card-title">
-        <span>${activeTeam.name} — Load & Delayed Backlog (&gt; ${slaDays.toFixed(1)}d)</span>
+        <span>${activeTeam.name} — Load &amp; Empirical Delayed Backlog (&gt; ${slaDays.toFixed(1)}d)</span>
         <span style="font-size:12px; font-weight:500; color:var(--text-muted);">Bars: Load % · Line: Delayed Cases</span>
       </div>
 
@@ -104,9 +107,14 @@ export function renderTeamChartCard(activeTeam, log, state) {
 
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:16px; padding-top:14px; border-top:1px solid var(--border-soft); flex-wrap:wrap;">
         <span class="badge badge-red">${activeTeam.peakSummary}</span>
-        <button class="btn btn-sm" data-action="goto-page" data-page="timeline">
-          View Case Timeline →
-        </button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-sm" data-action="goto-page" data-page="timeline">
+            View Case Timeline
+          </button>
+          <button class="btn btn-sm btn-dark" data-action="goto-page" data-page="compare">
+            Compare Cases →
+          </button>
+        </div>
       </div>
     </div>
   `;
@@ -123,6 +131,8 @@ export function renderCapacityView(log, state) {
         ${renderDelayThresholdControl(state)}
       </div>
     </div>
+
+    ${renderFocusStepBanner(log, state, { contextNote: `Focusing on ${activeTeam.name}` })}
 
     <div class="split-sidebar-grid">
       <div class="team-list">

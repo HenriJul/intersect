@@ -2,10 +2,12 @@
  * Subpage 5: Compare Cases
  */
 
+import { evaluateEmpiricalWhatIf } from "../data/empiricalCohortData.js?v=9";
 import {
   renderDelayThresholdControl,
+  renderFocusStepBanner,
   renderPageTitleBlock
-} from "./pageGuides.js?v=6";
+} from "./pageGuides.js?v=9";
 
 function formatEur(num) {
   if (num >= 1000000) return `€${(num / 1000000).toFixed(2)}M`;
@@ -15,41 +17,44 @@ function formatEur(num) {
 export function computeComparisonMetrics(log, state) {
   const comp = log.comparison;
   const baseSla = log.defaultSlaDays || 3.0;
-  const ratio = Math.pow(baseSla / Math.max(1.0, state.slaThresholdDays), 0.78);
-  const delayedCount = Math.min(
-    comp.totalClusters - 40,
-    Math.max(45, Math.round(comp.baseDelayedAt3d * ratio))
-  );
-  const onTimeCount = comp.totalClusters - delayedCount;
-  const delayedPct = Math.round((delayedCount / comp.totalClusters) * 100);
-  const stalledEur = comp.baseStalledEur * (delayedCount / comp.baseDelayedAt3d);
+  const slaDays =
+    state && typeof state.slaThresholdDays === "number" ? state.slaThresholdDays : baseSla;
+  const redPct =
+    state && typeof state.whatIfReductionPct === "number" ? state.whatIfReductionPct : 40;
 
-  const redFactor = state.whatIfReductionPct / 100;
-  const recoveredCases = Math.round(delayedCount * redFactor * 0.76);
-  const unblockedEur = stalledEur * redFactor * 0.81;
-  const fewerRipples = Math.round(comp.baseRippleEvents * redFactor * 0.68);
+  const sim = evaluateEmpiricalWhatIf(
+    log.logId,
+    slaDays,
+    redPct,
+    comp.primaryFactorShare || 0.74,
+    comp.baseStalledEur,
+    baseSla,
+    comp.baseRippleEvents
+  );
 
   return {
-    onTimeCount: onTimeCount.toLocaleString("en-US"),
-    onTimePct: `${100 - delayedPct}% of total`,
-    delayedCount: delayedCount.toLocaleString("en-US"),
-    delayedPct: `${delayedPct}% of total`,
-    stalledEur: formatEur(stalledEur),
-    recoveredCases: `+${recoveredCases}`,
-    unblockedEur: formatEur(unblockedEur),
-    fewerRipples: `-${fewerRipples}`
+    onTimeCount: sim.onTimeCount.toLocaleString("en-US"),
+    onTimePct: `${sim.onTimePct}% of ${sim.totalCount.toLocaleString("en-US")} cases`,
+    delayedCount: sim.delayedCount.toLocaleString("en-US"),
+    delayedPct: `${sim.delayedPct}% of ${sim.totalCount.toLocaleString("en-US")} cases`,
+    stalledEur: formatEur(sim.stalledEur),
+    recoveredCases: `+${sim.recoveredCases.toLocaleString("en-US")}`,
+    unblockedEur: formatEur(sim.unblockedEur),
+    fewerRipples: `-${sim.fewerRipples.toLocaleString("en-US")}`,
+    scaledRipplesStr: `${sim.scaledRipples.toLocaleString("en-US")} ${comp.rippleUnit}`
   };
 }
 
 export function renderComparisonView(log, state) {
   const comp = log.comparison;
+  const step = log.steps[state.selectedStepId] || log.steps[log.defaultStepId];
   const m = computeComparisonMetrics(log, state);
 
   return `
     <div class="page-header">
       ${renderPageTitleBlock(
         "Compare Cases",
-        `<span id="cmp-meta-text">On-time vs. delayed (&gt; ${state.slaThresholdDays.toFixed(1)} days wait)</span>`
+        `<span id="cmp-meta-text">Empirical cohorts: on-time vs. delayed (&gt; ${state.slaThresholdDays.toFixed(1)}d gate wait · n = ${comp.totalClusters.toLocaleString("en-US")})</span>`
       )}
 
       <div class="header-controls">
@@ -57,40 +62,47 @@ export function renderComparisonView(log, state) {
       </div>
     </div>
 
+    ${renderFocusStepBanner(log, state, { contextNote: comp.testNote || "" })}
+
     <div class="kpi-row">
       <div class="kpi-card">
-        <div class="kpi-label">On-Time Cases</div>
+        <div class="kpi-label">On-Time Cohort (&le; ${state.slaThresholdDays.toFixed(1)}d)</div>
         <div id="cmp-ontime-count" class="kpi-value" style="color:var(--green);">${m.onTimeCount}</div>
         <div id="cmp-ontime-pct" class="kpi-sub">${m.onTimePct}</div>
       </div>
 
       <div class="kpi-card">
-        <div class="kpi-label">Delayed Cases</div>
+        <div class="kpi-label">Delayed Cohort (&gt; ${state.slaThresholdDays.toFixed(1)}d)</div>
         <div id="cmp-delayed-count" class="kpi-value" style="color:var(--red);">${m.delayedCount}</div>
         <div id="cmp-delayed-pct" class="kpi-sub">${m.delayedPct}</div>
       </div>
 
       <div class="kpi-card">
-        <div class="kpi-label">Delayed Value</div>
+        <div class="kpi-label">Delayed Cohort Value</div>
         <div id="cmp-stalled-eur" class="kpi-value">${m.stalledEur}</div>
-        <div class="kpi-sub">${comp.baseRippleEvents} ${comp.rippleUnit}</div>
+        <div id="cmp-ripple-sub" class="kpi-sub">${m.scaledRipplesStr}</div>
       </div>
     </div>
 
     <div class="two-col">
       <div class="card">
         <div class="card-title">
-          <span>Top Delay Factors</span>
-          <span style="font-size:12px; color:var(--text-muted); font-weight:500;">Avg wait comparison</span>
+          <div>
+            <span>Statistically Significant Delay Factors</span>
+            <div style="font-size:11px; color:var(--text-muted); font-weight:500; margin-top:2px;">
+              ${comp.testNote || "Mann–Whitney U · 95% Bootstrap CI · Benjamini–Hochberg FDR"}
+            </div>
+          </div>
+          <span class="badge badge-neutral">BH-Corrected</span>
         </div>
 
         ${comp.factors
           .map(
             (f) => `
             <div class="factor-row">
-              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;">
-                <span style="font-weight:600; font-size:14px;">${f.title}</span>
-                <div style="display:flex; align-items:center; gap:6px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;">
+                <span style="font-weight:700; font-size:14px;">${f.title}</span>
+                <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
                   <span style="font-size:11.5px; color:var(--text-muted);">${f.cases}</span>
                   <span class="badge badge-red">${f.multiplier}</span>
                 </div>
@@ -111,6 +123,11 @@ export function renderComparisonView(log, state) {
                 </div>
                 <span style="text-align:right; color:var(--text-secondary);">${f.withoutVal}</span>
               </div>
+
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:7px; font-size:11px; color:var(--text-muted); flex-wrap:wrap;">
+                <span>With: ${f.withCi || "—"} · Without: ${f.withoutCi || "—"}</span>
+                <span style="font-weight:600; color:var(--text-secondary);">${f.cliffsDelta || ""} · ${f.pValBh || "p_BH < 0.001"}</span>
+              </div>
             </div>
           `
           )
@@ -119,12 +136,18 @@ export function renderComparisonView(log, state) {
 
       <div class="card">
         <div class="card-title">
-          <span>Estimate Improvement</span>
+          <div>
+            <span>Scenario What-If Simulator — ${step.name}</span>
+            <div style="font-size:11px; color:var(--text-muted); font-weight:500; margin-top:2px;">
+              Evaluates how many of the ${m.delayedCount} delayed cases drop &le; ${state.slaThresholdDays.toFixed(1)}d
+            </div>
+          </div>
+          <span class="badge badge-neutral">Empirical CDF</span>
         </div>
 
         <div style="padding:14px 16px; background:var(--bg-subtle); border-radius:var(--radius-md); border:1px solid var(--border-soft); margin-bottom:16px;">
           <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:600; margin-bottom:10px;">
-            <span>Reduce ${comp.delayTargetLabel}</span>
+            <span>Reduce ${step.mainDelaySource}</span>
             <span id="cmp-whatif-pct" style="color:var(--blue);">-${state.whatIfReductionPct}%</span>
           </div>
           <input
@@ -138,11 +161,14 @@ export function renderComparisonView(log, state) {
             data-action="change-whatif"
             aria-label="Reduce delay percentage"
           />
+          <div style="font-size:11.5px; color:var(--text-muted); margin-top:8px;">
+            Recommendation: ${step.recommendation || ""}
+          </div>
         </div>
 
         <div style="display:flex; flex-direction:column; gap:10px;">
           <div class="chain-box">
-            <span style="color:var(--text-secondary);">Cases Back On-Time</span>
+            <span style="color:var(--text-secondary);">Cases Back On-Time (&le; <span id="cmp-target-sla">${state.slaThresholdDays.toFixed(1)}d</span>)</span>
             <strong id="cmp-recovered" style="font-size:17px; color:var(--green);">${m.recoveredCases}</strong>
           </div>
           <div class="chain-box">
@@ -156,8 +182,8 @@ export function renderComparisonView(log, state) {
         </div>
 
         <div style="margin-top:18px; display:flex; justify-content:flex-end;">
-          <button class="btn" data-action="goto-page" data-page="timeline">
-            View Case Timeline →
+          <button class="btn btn-dark" data-action="goto-page" data-page="timeline">
+            Verify on Case Timeline →
           </button>
         </div>
       </div>
