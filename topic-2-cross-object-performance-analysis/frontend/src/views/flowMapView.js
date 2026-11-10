@@ -5,8 +5,9 @@
 import {
   computeStepSlaStatus,
   renderDelayThresholdControl,
+  renderEditExplanationsButton,
   renderPageTitleBlock
-} from "./pageGuides.js?v=10";
+} from "./pageGuides.js?v=11";
 
 function renderOrderManagementPaths(showExceptions, showChain, selectedStepId) {
   const hi = showChain;
@@ -252,6 +253,7 @@ export function renderFlowMapView(log, state) {
         <button id="btn-toggle-chain" class="btn ${state.showChain ? "btn-dark" : ""}" data-action="toggle-chain">
           Highlight Delay Chain
         </button>
+        ${renderEditExplanationsButton()}
       </div>
     </div>
 

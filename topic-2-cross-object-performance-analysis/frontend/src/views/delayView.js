@@ -2,12 +2,13 @@
  * Subpage 3: Delay Breakdown
  */
 
-import { getResolvedStepTexts } from "../data/schemaTexts.js?v=10";
+import { getResolvedStepTexts } from "../data/schemaTexts.js?v=11";
 import {
   computeStepSlaStatus,
   renderDelayThresholdControl,
+  renderEditExplanationsButton,
   renderPageTitleBlock
-} from "./pageGuides.js?v=10";
+} from "./pageGuides.js?v=11";
 
 export function renderDelayBody(log, state) {
   const step = log.steps[state.selectedStepId] || log.steps[log.defaultStepId];
@@ -185,13 +186,7 @@ export function renderDelayView(log, state) {
         >
           <span>${showDescriptions ? "Hide Descriptions" : "Show Descriptions"}</span>
         </button>
-        <button class="btn" data-action="open-schema-editor" title="Edit textual descriptions for all logs sharing this schema">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M12 20h9"/>
-            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
-          </svg>
-          <span>Edit Explanations</span>
-        </button>
+        ${renderEditExplanationsButton()}
       </div>
     </div>
 

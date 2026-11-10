@@ -4,8 +4,9 @@
 
 import {
   renderDelayThresholdControl,
+  renderEditExplanationsButton,
   renderPageTitleBlock
-} from "./pageGuides.js?v=10";
+} from "./pageGuides.js?v=11";
 
 export const TIMELINE_MODES = ["delayed", "healthy", "both"];
 
@@ -160,6 +161,7 @@ export function renderTimelineView(log, state) {
             Show Both
           </button>
         </div>
+        ${renderEditExplanationsButton()}
       </div>
     </div>
 

@@ -5,8 +5,9 @@
 import {
   computeOverviewSlaMetrics,
   renderDelayThresholdControl,
+  renderEditExplanationsButton,
   renderPageTitleBlock
-} from "./pageGuides.js?v=10";
+} from "./pageGuides.js?v=11";
 
 function renderTimelineChartSvg(timeline, slaRatio = 1.0) {
   const width = 620;
@@ -123,6 +124,7 @@ export function renderCapacityView(log, state) {
       ${renderPageTitleBlock("Team Workload", "Shared teams across multiple object workflows")}
       <div class="header-controls">
         ${renderDelayThresholdControl(state)}
+        ${renderEditExplanationsButton()}
       </div>
     </div>
 

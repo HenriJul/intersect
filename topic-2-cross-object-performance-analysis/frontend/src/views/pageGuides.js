@@ -2,7 +2,7 @@
  * Sidebar Page Icons, Title + Info Button Header Helper, and Page-Specific Guide Overlays.
  */
 
-import { computeEmpiricalCohort } from "../data/empiricalCohortData.js?v=10";
+import { computeEmpiricalCohort } from "../data/empiricalCohortData.js?v=11";
 
 export const PAGE_ICONS = {
   overview: `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>`,
@@ -38,15 +38,15 @@ export const PAGE_GUIDES = {
     steps: [
       {
         heading: "Select Any Shared Step",
-        detail: "Click any vertical pill spanning multiple lanes (e.g. Create Package or Execute Payment) to focus it."
+        detail: "Click any vertical pill spanning multiple lanes to focus it and inspect its wait time."
       },
       {
         heading: "Compare Against Delay Threshold",
         detail: "Adjust the 'Delay Threshold' slider in the header to see which shared steps breach (red) or approach (amber) your target."
       },
       {
-        heading: "Toggle Exceptions & Delay Chains",
-        detail: "Use 'Show Exceptions' to reveal rework loops, or 'Highlight Delay Chain' to see upstream-to-downstream propagation."
+        heading: "Toggle Exceptions, Delay Chains & Explanations",
+        detail: "Use 'Show Exceptions' to reveal rework loops, 'Highlight Delay Chain' to trace upstream-to-downstream propagation, or 'Edit Explanations' to customize lane and step labels."
       }
     ]
   },
@@ -63,8 +63,8 @@ export const PAGE_GUIDES = {
         detail: "Compare time spent 'Waiting for All Items' and 'Waiting for Other Objects' against 'Waiting for Team', or click 'Hide / Show Descriptions' in the header for a compact metrics-only view."
       },
       {
-        heading: "Edit Explanations for This Log Type",
-        detail: "Click 'Edit Explanations' to open the schema text editor overlay. Custom descriptions are saved to this log's schema (its object and event types) and automatically reused whenever a matching OCEL is loaded."
+        heading: "Edit Explanations Across the Whole App",
+        detail: "Click 'Edit Explanations' in any page header to open the schema text editor overlay. Custom labels and descriptions apply across all 6 pages and are saved to this log's schema."
       }
     ]
   },
@@ -74,15 +74,15 @@ export const PAGE_GUIDES = {
     steps: [
       {
         heading: "Choose a Team on the Left",
-        detail: "Click Warehousing, Shipment, Finance, or Procurement to inspect that group's workload distribution."
+        detail: "Click any team card on the left to inspect that group's workload distribution and backlog curve."
       },
       {
         heading: "Compare Load vs. Delayed Backlog",
         detail: "Grey bars show team utilization (%) while the red curve tracks delayed cases exceeding your header 'Delay Threshold'."
       },
       {
-        heading: "Inspect Peak Backlog Cases",
-        detail: "Click 'View Case Timeline' beneath the chart to examine an individual delayed case."
+        heading: "Customize Team & Activity Labels",
+        detail: "Click 'Edit Explanations' in the header to customize team display names, workload split labels, and peak backlog summaries for this log schema."
       }
     ]
   },
@@ -133,7 +133,7 @@ export function computeOverviewSlaMetrics(log, slaDays = 3.0) {
   const comp = log.comparison;
   const baseSla = log.defaultSlaDays || 3.0;
   const cohort = computeEmpiricalCohort(log.logId, slaDays, comp.baseStalledEur, baseSla);
-  const unitLabel = log.logId === "order-management" ? "delayed packages" : "delayed payments";
+  const unitLabel = log.delayedUnitLabel || "delayed cases";
 
   return {
     delayedCount: cohort.delayedCount,
@@ -216,6 +216,18 @@ export function renderDelayThresholdControl(state) {
         aria-label="Delay threshold in days"
       />
     </div>
+  `;
+}
+
+export function renderEditExplanationsButton() {
+  return `
+    <button class="btn" data-action="open-schema-editor" title="Edit labels and textual explanations across all pages for logs sharing this schema">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 20h9"/>
+        <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+      </svg>
+      <span>Edit Explanations</span>
+    </button>
   `;
 }
 

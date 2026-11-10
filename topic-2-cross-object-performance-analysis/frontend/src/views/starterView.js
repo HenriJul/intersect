@@ -4,6 +4,8 @@
  * file selection prompt, Upload Event Log button, and Example Log dropdown.
  */
 
+import { DEMO_LOGS, RAW_DEMO_LOGS } from "../data/demoPayloads.js?v=11";
+
 export function renderBrandMarkSvg(px = 22) {
   return `
     <svg width="${px}" height="${px}" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -48,8 +50,9 @@ export function renderStarterView() {
               aria-label="Select an example event log"
             >
               <option value="" selected disabled>Select example event log…</option>
-              <option value="order-management">Order Management</option>
-              <option value="ocel2-p2p">Procure-to-Pay</option>
+              ${Object.keys(RAW_DEMO_LOGS)
+                .map((id) => `<option value="${id}">${DEMO_LOGS[id].title}</option>`)
+                .join("")}
             </select>
           </div>
         </div>

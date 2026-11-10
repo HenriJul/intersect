@@ -2,11 +2,12 @@
  * Subpage 5: Compare Cases
  */
 
-import { evaluateEmpiricalWhatIf } from "../data/empiricalCohortData.js?v=10";
+import { evaluateEmpiricalWhatIf } from "../data/empiricalCohortData.js?v=11";
 import {
   renderDelayThresholdControl,
+  renderEditExplanationsButton,
   renderPageTitleBlock
-} from "./pageGuides.js?v=10";
+} from "./pageGuides.js?v=11";
 
 function formatEur(num) {
   if (num >= 1000000) return `€${(num / 1000000).toFixed(2)}M`;
@@ -56,6 +57,7 @@ export function renderComparisonView(log, state) {
 
       <div class="header-controls">
         ${renderDelayThresholdControl(state)}
+        ${renderEditExplanationsButton()}
       </div>
     </div>
 

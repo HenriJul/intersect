@@ -6,8 +6,9 @@ import {
   computeOverviewSlaMetrics,
   computeStepSlaStatus,
   renderDelayThresholdControl,
+  renderEditExplanationsButton,
   renderPageTitleBlock
-} from "./pageGuides.js?v=10";
+} from "./pageGuides.js?v=11";
 
 export function renderOverviewBody(log, state) {
   const slaDays = state && typeof state.slaThresholdDays === "number" ? state.slaThresholdDays : log.defaultSlaDays;
@@ -94,6 +95,7 @@ export function renderOverviewView(log, state) {
       ${renderPageTitleBlock("Overview", `${log.title} · ${log.timeSpan}`)}
       <div class="header-controls">
         ${renderDelayThresholdControl(state)}
+        ${renderEditExplanationsButton()}
       </div>
     </div>
 

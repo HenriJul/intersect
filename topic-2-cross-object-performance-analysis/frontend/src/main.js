@@ -6,29 +6,31 @@
  * is chosen via dropdown or file upload.
  */
 
-import { getLogPayload, probePythonBackend } from "./api/ocelClient.js?v=10";
+import { getLogPayload, probePythonBackend } from "./api/ocelClient.js?v=11";
+import { DEMO_LOGS, RAW_DEMO_LOGS } from "./data/demoPayloads.js?v=11";
 import {
+  pageToEditorTab,
   renderSchemaTextEditorModal,
-  resetStepSchemaTexts,
-  saveStepSchemaTexts
-} from "./data/schemaTexts.js?v=10";
-import { renderCapacityView, renderTeamChartCard } from "./views/capacityView.js?v=10";
-import { computeComparisonMetrics, renderComparisonView } from "./views/comparisonView.js?v=10";
-import { renderDelayBody, renderDelayView } from "./views/delayView.js?v=10";
-import { renderFlowBody, renderFlowMapView } from "./views/flowMapView.js?v=10";
-import { renderOverviewBody, renderOverviewView } from "./views/overviewView.js?v=10";
+  resetAllSchemaExplanations,
+  saveFullSchemaExplanations
+} from "./data/schemaTexts.js?v=11";
+import { renderCapacityView, renderTeamChartCard } from "./views/capacityView.js?v=11";
+import { computeComparisonMetrics, renderComparisonView } from "./views/comparisonView.js?v=11";
+import { renderDelayBody, renderDelayView } from "./views/delayView.js?v=11";
+import { renderFlowBody, renderFlowMapView } from "./views/flowMapView.js?v=11";
+import { renderOverviewBody, renderOverviewView } from "./views/overviewView.js?v=11";
 import {
   PAGE_ICONS,
   computeStepSlaStatus,
   renderPageInfoOverlay
-} from "./views/pageGuides.js?v=10";
-import { renderBrandMarkSvg, renderStarterView } from "./views/starterView.js?v=10";
+} from "./views/pageGuides.js?v=11";
+import { renderBrandMarkSvg, renderStarterView } from "./views/starterView.js?v=11";
 import {
   TIMELINE_MODES,
   renderTimelineCardsRegion,
   renderTimelineView
-} from "./views/timelineView.js?v=10";
-import { renderUploadModal } from "./views/uploadModal.js?v=10";
+} from "./views/timelineView.js?v=11";
+import { renderUploadModal } from "./views/uploadModal.js?v=11";
 
 const SUBPAGES = [
   { id: "overview", label: "Overview" },
@@ -64,6 +66,7 @@ const state = {
   pageInfoOpen: false,
   uploadModalOpen: false,
   schemaEditorOpen: false,
+  schemaEditorTab: "steps",
   apiStatus: { connected: false, mode: "Static Demo" }
 };
 
@@ -195,8 +198,12 @@ function renderWorkspaceShellHtml() {
         <label for="dataset-select" class="sidebar-field-label">Dataset</label>
         <div class="sidebar-select-wrap">
           <select id="dataset-select" class="sidebar-select" data-action="switch-log-dropdown">
-            <option value="order-management" ${state.logId === "order-management" ? "selected" : ""}>Order Management</option>
-            <option value="ocel2-p2p" ${state.logId === "ocel2-p2p" ? "selected" : ""}>Procure-to-Pay</option>
+            ${Object.keys(RAW_DEMO_LOGS)
+              .map(
+                (id) =>
+                  `<option value="${id}" ${state.logId === id ? "selected" : ""}>${DEMO_LOGS[id].title}</option>`
+              )
+              .join("")}
             <option value="">No log selected</option>
           </select>
         </div>
@@ -261,8 +268,14 @@ function syncSidebarUI() {
   });
 
   const dsSelect = document.getElementById("dataset-select");
-  if (dsSelect && dsSelect.value !== (state.logId || "")) {
-    dsSelect.value = state.logId || "";
+  if (dsSelect) {
+    Object.keys(RAW_DEMO_LOGS).forEach((id) => {
+      const opt = dsSelect.querySelector(`option[value="${id}"]`);
+      if (opt) opt.textContent = DEMO_LOGS[id].title;
+    });
+    if (dsSelect.value !== (state.logId || "")) {
+      dsSelect.value = state.logId || "";
+    }
   }
 
   const apiRow = document.getElementById("api-status-row");
@@ -393,6 +406,110 @@ function updateSlaAcrossActivePage() {
   }
 }
 
+function collectAndSaveSchemaForm(log, stepId) {
+  const getVal = (id) => {
+    const el = document.getElementById(id);
+    return el ? el.value.trim() : "";
+  };
+
+  // Tab 1: Overview & Flow
+  const kpiNodes = Array.from(document.querySelectorAll("[data-kpi-idx]"));
+  const tracks = {};
+  document.querySelectorAll("[data-track-label-id]").forEach((el) => {
+    const tid = el.dataset.trackLabelId;
+    tracks[tid] = tracks[tid] || {};
+    tracks[tid].label = el.value.trim();
+  });
+  document.querySelectorAll("[data-track-sub-id]").forEach((el) => {
+    const tid = el.dataset.trackSubId;
+    tracks[tid] = tracks[tid] || {};
+    tracks[tid].sub = el.value.trim();
+  });
+
+  const singleSteps = {};
+  document.querySelectorAll("[data-single-step-id]").forEach((el) => {
+    singleSteps[el.dataset.singleStepId] = el.value.trim();
+  });
+
+  const exceptionLoops = {};
+  document.querySelectorAll("[data-exception-id]").forEach((el) => {
+    exceptionLoops[el.dataset.exceptionId] = el.value.trim();
+  });
+
+  // Tab 2: Step Explanations
+  const sourceLabelNodes = Array.from(document.querySelectorAll("[data-source-label-idx]"));
+  const sourceDescNodes = Array.from(document.querySelectorAll("[data-source-idx]"));
+  const chainNameNodes = Array.from(document.querySelectorAll("[data-chain-name-idx]"));
+  const chainDescNodes = Array.from(document.querySelectorAll("[data-chain-idx]"));
+
+  const stepUpdates = {
+    name: getVal("field-step-name"),
+    mainDelaySource: getVal("field-step-main-source"),
+    primaryCauseTag: getVal("field-step-cause-tag"),
+    summaryText: getVal("field-summary-text"),
+    allItemsDesc: getVal("field-all-items-desc"),
+    otherObjectsDesc: getVal("field-other-objects-desc"),
+    teamDesc: getVal("field-team-desc"),
+    delaySourceLabels: sourceLabelNodes.map((n) => n.value.trim()),
+    delaySourceDescs: sourceDescNodes.map((n) => n.value.trim()),
+    chainNames: chainNameNodes.map((n) => n.value.trim()),
+    chainDescs: chainDescNodes.map((n) => n.value.trim())
+  };
+
+  // Tab 3: Team Workload
+  const teams = {};
+  document.querySelectorAll("[data-team-name-id]").forEach((el) => {
+    const teamId = el.dataset.teamNameId;
+    teams[teamId] = teams[teamId] || { splitLabels: [] };
+    teams[teamId].name = el.value.trim();
+  });
+  document.querySelectorAll("[data-team-peak-id]").forEach((el) => {
+    const teamId = el.dataset.teamPeakId;
+    teams[teamId] = teams[teamId] || { splitLabels: [] };
+    teams[teamId].peakSummary = el.value.trim();
+  });
+  document.querySelectorAll("[data-team-split-id]").forEach((el) => {
+    const teamId = el.dataset.teamSplitId;
+    const idx = parseInt(el.dataset.teamSplitIdx, 10);
+    teams[teamId] = teams[teamId] || { splitLabels: [] };
+    teams[teamId].splitLabels[idx] = el.value.trim();
+  });
+
+  // Tab 4: Compare & Timeline
+  const factorTitleNodes = Array.from(document.querySelectorAll("[data-factor-title-idx]"));
+  const comparison = {
+    delayTargetLabel: getVal("field-cmp-target"),
+    rippleUnit: getVal("field-cmp-ripple"),
+    factorTitles: factorTitleNodes.map((n) => n.value.trim())
+  };
+
+  const timeline = {
+    delayedCase: {
+      caseId: getVal("field-tl-delayed-id"),
+      meta: getVal("field-tl-delayed-meta"),
+      waitSummary: getVal("field-tl-delayed-wait")
+    },
+    healthyCase: {
+      caseId: getVal("field-tl-healthy-id"),
+      meta: getVal("field-tl-healthy-meta"),
+      waitSummary: getVal("field-tl-healthy-wait")
+    }
+  };
+
+  saveFullSchemaExplanations(log, stepId, {
+    processTitle: getVal("field-process-title"),
+    delayedUnitLabel: getVal("field-delayed-unit"),
+    kpiLabels: kpiNodes.map((n) => n.value.trim()),
+    tracks,
+    singleSteps,
+    exceptionLoops,
+    step: stepUpdates,
+    teams,
+    comparison,
+    timeline
+  });
+}
+
 /* ---------- Delegated Event Listeners ---------- */
 document.addEventListener("click", (e) => {
   const target = e.target.closest("[data-action]");
@@ -430,9 +547,22 @@ document.addEventListener("click", (e) => {
 
   if (action === "open-schema-editor") {
     state.schemaEditorOpen = true;
+    state.schemaEditorTab = pageToEditorTab(state.activePage);
     state.pageInfoOpen = false;
     state.uploadModalOpen = false;
     syncOverlays();
+    return;
+  }
+
+  if (action === "set-schema-editor-tab") {
+    const nextTab = target.dataset.tab || "steps";
+    state.schemaEditorTab = nextTab;
+    document.querySelectorAll('[data-action="set-schema-editor-tab"]').forEach((btn) => {
+      btn.classList.toggle("btn-dark", btn.dataset.tab === nextTab);
+    });
+    document.querySelectorAll("[data-editor-panel]").forEach((panel) => {
+      panel.style.display = panel.dataset.editorPanel === nextTab ? "flex" : "none";
+    });
     return;
   }
 
@@ -456,38 +586,19 @@ document.addEventListener("click", (e) => {
   const log = getLogPayload(state.logId);
 
   if (action === "save-schema-texts") {
-    const getVal = (id) => {
-      const el = document.getElementById(id);
-      return el ? el.value : "";
-    };
-    const sourceNodes = Array.from(document.querySelectorAll("[data-source-idx]"));
-    const chainNodes = Array.from(document.querySelectorAll("[data-chain-idx]"));
-
-    saveStepSchemaTexts(log, state.selectedStepId, {
-      summaryText: getVal("field-summary-text"),
-      allItemsDesc: getVal("field-all-items-desc"),
-      otherObjectsDesc: getVal("field-other-objects-desc"),
-      teamDesc: getVal("field-team-desc"),
-      delaySourceDescs: sourceNodes.map((n) => n.value),
-      chainDescs: chainNodes.map((n) => n.value)
-    });
-
+    collectAndSaveSchemaForm(log, state.selectedStepId);
     state.schemaEditorOpen = false;
     syncOverlays();
-    const delayRegion = document.getElementById("delay-dynamic-region");
-    if (delayRegion) {
-      delayRegion.innerHTML = renderDelayBody(log, state);
-    }
+    syncSidebarUI();
+    renderPage({ animate: false });
     return;
   }
 
   if (action === "reset-schema-texts") {
-    resetStepSchemaTexts(log, state.selectedStepId);
+    resetAllSchemaExplanations(log);
     syncOverlays();
-    const delayRegion = document.getElementById("delay-dynamic-region");
-    if (delayRegion) {
-      delayRegion.innerHTML = renderDelayBody(log, state);
-    }
+    syncSidebarUI();
+    renderPage({ animate: false });
     return;
   }
 
@@ -608,20 +719,12 @@ document.addEventListener("change", (e) => {
       renderPage({ animate: false });
     }
   } else if (target.dataset.action === "select-step-in-editor" && state.logId) {
+    const prevLog = getLogPayload(state.logId);
+    collectAndSaveSchemaForm(prevLog, state.selectedStepId);
     state.selectedStepId = target.value;
-    const log = getLogPayload(state.logId);
-    const step = log.steps[state.selectedStepId] || log.steps[log.defaultStepId];
-    const slaInfo = computeStepSlaStatus(step, log, state.slaThresholdDays);
-    const stepSelect = document.getElementById("step-select");
-    if (stepSelect) stepSelect.value = state.selectedStepId;
-    const metaEl = document.getElementById("delay-meta-text");
-    if (metaEl) {
-      metaEl.textContent = `${step.volume} · ${slaInfo.affectedValue} affected (> ${state.slaThresholdDays.toFixed(1)}d threshold)`;
-    }
-    const delayRegion = document.getElementById("delay-dynamic-region");
-    if (delayRegion) {
-      delayRegion.innerHTML = renderDelayBody(log, state);
-    }
+    state.schemaEditorTab = "steps";
+    syncSidebarUI();
+    renderPage({ animate: false });
     syncOverlays();
   }
 });

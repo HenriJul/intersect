@@ -1,26 +1,40 @@
 /**
- * Automated Render & Empirical Cohort Smoke Test (`tests/smoke_test.mjs`)
+ * Automated Render, Empirical Cohort & Schema Explanations Smoke Test (`tests/smoke_test.mjs`)
  */
 
 import assert from "node:assert/strict";
-import { DEMO_LOGS } from "../frontend/src/data/demoPayloads.js?v=10";
+import { DEMO_LOGS, RAW_DEMO_LOGS } from "../frontend/src/data/demoPayloads.js?v=11";
 import {
   computeEmpiricalCohort,
   evaluateEmpiricalWhatIf
-} from "../frontend/src/data/empiricalCohortData.js?v=10";
-import { renderCapacityView } from "../frontend/src/views/capacityView.js?v=10";
-import { renderComparisonView } from "../frontend/src/views/comparisonView.js?v=10";
-import { renderDelayView } from "../frontend/src/views/delayView.js?v=10";
-import { renderFlowMapView } from "../frontend/src/views/flowMapView.js?v=10";
-import { renderOverviewView } from "../frontend/src/views/overviewView.js?v=10";
-import { renderStarterView } from "../frontend/src/views/starterView.js?v=10";
-import { renderTimelineView } from "../frontend/src/views/timelineView.js?v=10";
+} from "../frontend/src/data/empiricalCohortData.js?v=11";
+import {
+  getResolvedLog,
+  renderSchemaTextEditorModal
+} from "../frontend/src/data/schemaTexts.js?v=11";
+import { renderCapacityView } from "../frontend/src/views/capacityView.js?v=11";
+import { renderComparisonView } from "../frontend/src/views/comparisonView.js?v=11";
+import { renderDelayView } from "../frontend/src/views/delayView.js?v=11";
+import { renderFlowMapView } from "../frontend/src/views/flowMapView.js?v=11";
+import { renderOverviewView } from "../frontend/src/views/overviewView.js?v=11";
+import { renderStarterView } from "../frontend/src/views/starterView.js?v=11";
+import { renderTimelineView } from "../frontend/src/views/timelineView.js?v=11";
 
 const starterHtml = renderStarterView();
 assert.ok(starterHtml.includes("Intersect"), "Starter view should render brand name");
+assert.ok(starterHtml.includes("Order Management"), "Starter dropdown resolves process title from schema");
 
 for (const logId of ["order-management", "ocel2-p2p"]) {
+  // Verify raw structural payload has no hardcoded summaryText prose
+  const rawLog = RAW_DEMO_LOGS[logId];
+  const firstRawStep = Object.values(rawLog.steps)[0];
+  assert.equal(firstRawStep.summaryText, undefined, "Raw structural payload should not hardcode step prose");
+
+  // Verify resolved log populates all process-specific labels & descriptions from schemaTexts.js
   const log = DEMO_LOGS[logId];
+  const resolvedCheck = getResolvedLog(rawLog);
+  assert.ok(log.title.length > 3, `Resolved log title populated for ${logId}`);
+  assert.ok(resolvedCheck.steps[log.defaultStepId].summaryText.length > 20, "Resolved step summaryText populated");
 
   // Verify empirical cohorts are strictly non-increasing as threshold rises
   const c15 = computeEmpiricalCohort(logId, 1.5, log.comparison.baseStalledEur, log.defaultSlaDays);
@@ -43,6 +57,7 @@ for (const logId of ["order-management", "ocel2-p2p"]) {
     for (const showDelayDescriptions of [true, false]) {
       const state = {
         logId,
+        activePage: "overview",
         selectedStepId: log.defaultStepId,
         selectedTeamId: log.capacity.defaultTeamId,
         slaThresholdDays,
@@ -52,7 +67,8 @@ for (const logId of ["order-management", "ocel2-p2p"]) {
         showDelayDescriptions,
         timelineMode: "both",
         selectedEventKey: "delayed-0-0",
-        selectedEventInfo: { label: "Test Event", meta: "Apr 05 · Actor" }
+        selectedEventInfo: { label: "Test Event", meta: "Apr 05 · Actor" },
+        schemaEditorTab: "steps"
       };
 
       const ovHtml = renderOverviewView(log, state);
@@ -61,13 +77,24 @@ for (const logId of ["order-management", "ocel2-p2p"]) {
       const capHtml = renderCapacityView(log, state);
       const cmpHtml = renderComparisonView(log, state);
       const tlHtml = renderTimelineView(log, state);
+      const modalHtml = renderSchemaTextEditorModal(rawLog, state, true);
 
-      assert.ok(ovHtml.length > 200, "Overview rendered");
-      assert.ok(flowHtml.length > 200, "Process Flow rendered");
-      assert.ok(delayHtml.length > 200, "Delay Breakdown rendered");
-      assert.ok(capHtml.length > 200, "Team Workload rendered");
-      assert.ok(cmpHtml.length > 200, "Compare Cases rendered");
-      assert.ok(tlHtml.length > 200, "Case Timeline rendered");
+      // Every page should include the Edit Explanations button
+      for (const [name, html] of [
+        ["Overview", ovHtml],
+        ["Process Flow", flowHtml],
+        ["Delay Breakdown", delayHtml],
+        ["Team Workload", capHtml],
+        ["Compare Cases", cmpHtml],
+        ["Case Timeline", tlHtml]
+      ]) {
+        assert.ok(html.includes("Edit Explanations"), `${name} should include Edit Explanations button`);
+      }
+
+      assert.ok(modalHtml.includes("Overview &amp; Flow"), "Modal includes Overview & Flow tab");
+      assert.ok(modalHtml.includes("Step Explanations"), "Modal includes Step Explanations tab");
+      assert.ok(modalHtml.includes("Team Workload"), "Modal includes Team Workload tab");
+      assert.ok(modalHtml.includes("Compare &amp; Timeline"), "Modal includes Compare & Timeline tab");
       assert.ok(
         !tlHtml.includes("On-Time (&le; 3.0d threshold) · 4.6 days"),
         "No contradictory On-Time badge on Timeline"
