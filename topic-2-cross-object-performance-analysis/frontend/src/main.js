@@ -24,7 +24,7 @@ import {
   computeStepSlaStatus,
   renderPageInfoOverlay
 } from "./views/pageGuides.js?v=13";
-import { renderBrandMarkSvg, renderStarterView } from "./views/starterView.js?v=15";
+import { renderBrandMarkSvg, renderStarterView } from "./views/starterView.js?v=16";
 import {
   TIMELINE_MODES,
   renderTimelineCardsRegion,
@@ -222,7 +222,7 @@ function renderWorkspaceShellHtml() {
             <span class="dot ${state.apiStatus.connected ? "green" : "blue"}" style="width:6px; height:6px;"></span>
             <span>${state.apiStatus.connected ? "Python API" : "Static Demo"}</span>
           </span>
-          <span style="color:var(--text-faint);">Henri Julius</span>
+          <a href="https://github.com/HenriJul/intersect" target="_blank" rel="noopener noreferrer" class="author-credit-link">Henri Julius</a>
         </div>
       </div>
     </aside>
@@ -288,7 +288,7 @@ function syncSidebarUI() {
         <span class="dot ${state.apiStatus.connected ? "green" : "blue"}" style="width:6px; height:6px;"></span>
         <span>${state.apiStatus.connected ? "Python API" : "Static Demo"}</span>
       </span>
-      <span style="color:var(--text-faint);">Henri Julius</span>
+      <a href="https://github.com/HenriJul/intersect" target="_blank" rel="noopener noreferrer" class="author-credit-link">Henri Julius</a>
     `;
   }
 }

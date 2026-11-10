@@ -57,9 +57,15 @@ export function renderStarterView() {
           </div>
         </div>
 
-        <div style="margin-top:18px; font-size:12px; color:var(--text-faint);">
+        <a
+          href="https://github.com/HenriJul/intersect"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="author-credit-link"
+          style="margin-top:18px; font-size:12px;"
+        >
           Henri Julius
-        </div>
+        </a>
       </div>
     </section>
   `;

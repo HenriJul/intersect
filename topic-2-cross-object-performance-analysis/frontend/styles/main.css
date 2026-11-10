@@ -599,6 +599,18 @@ html[data-theme="dark"] .theme-toggle-btn .sun-icon {
   padding: 2px 4px 0;
 }
 
+.author-credit-link {
+  color: var(--text-faint);
+  text-decoration: none;
+  transition: color 0.16s ease;
+}
+
+.author-credit-link:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* ---------- Main Content Canvas & Page Transitions ---------- */
 .main-canvas {
   flex: 1;
