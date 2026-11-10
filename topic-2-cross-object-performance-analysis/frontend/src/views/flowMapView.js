@@ -30,7 +30,7 @@ function renderOrderManagementPaths(showExceptions, showChain, selectedStepId) {
           fill="none" />
 
     ${
-      showExceptions || hi
+      showExceptions
         ? `
           <path d="M 402 178 C 402 118, 488 118, 488 178" stroke="#dc2626" stroke-width="1.8" stroke-dasharray="4 3" fill="none" />
           <path d="M 708 78 C 708 26, 792 26, 792 78" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4 3" fill="none" />
@@ -60,7 +60,7 @@ function renderP2PPaths(showExceptions, showChain, selectedStepId) {
     <path d="M 610 374 L 830 374" stroke="#059669" stroke-width="2.4" fill="none" stroke-opacity="0.7" />
 
     ${
-      showExceptions || hi
+      showExceptions
         ? `
           <path d="M 215 78 C 215 26, 295 26, 295 78" stroke="#dc2626" stroke-width="1.8" stroke-dasharray="4 3" fill="none" />
           <path d="M 622 278 C 622 222, 698 222, 698 278" stroke="#d97706" stroke-width="1.8" stroke-dasharray="4 3" fill="none" />
@@ -73,7 +73,7 @@ function renderP2PPaths(showExceptions, showChain, selectedStepId) {
 function renderFlowDiagramSvg(log, state) {
   const { tracks, flowGraph } = log;
   const trackMap = Object.fromEntries(tracks.map((t) => [t.id, t]));
-  const showLoops = state.showExceptions || state.showChain;
+  const showLoops = Boolean(state.showExceptions);
 
   const lanesSvg = tracks
     .map(

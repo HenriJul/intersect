@@ -17,7 +17,7 @@ import {
 import { renderCapacityView, renderTeamChartCard } from "./views/capacityView.js?v=13";
 import { computeComparisonMetrics, renderComparisonView } from "./views/comparisonView.js?v=13";
 import { renderDelayBody, renderDelayView } from "./views/delayView.js?v=13";
-import { renderFlowBody, renderFlowMapView } from "./views/flowMapView.js?v=13";
+import { renderFlowBody, renderFlowMapView } from "./views/flowMapView.js?v=14";
 import { renderOverviewBody, renderOverviewView } from "./views/overviewView.js?v=13";
 import {
   PAGE_ICONS,

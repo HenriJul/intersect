@@ -17,7 +17,7 @@ import {
 import { renderCapacityView } from "../frontend/src/views/capacityView.js?v=13";
 import { renderComparisonView } from "../frontend/src/views/comparisonView.js?v=13";
 import { renderDelayView } from "../frontend/src/views/delayView.js?v=13";
-import { renderFlowMapView } from "../frontend/src/views/flowMapView.js?v=13";
+import { renderFlowMapView } from "../frontend/src/views/flowMapView.js?v=14";
 import { renderOverviewView } from "../frontend/src/views/overviewView.js?v=13";
 import { renderPageInfoOverlay } from "../frontend/src/views/pageGuides.js?v=13";
 import { renderStarterView } from "../frontend/src/views/starterView.js?v=13";
@@ -86,6 +86,24 @@ for (const logId of ["order-management", "ocel2-p2p"]) {
 
       const ovHtml = renderOverviewView(log, state);
       const flowHtml = renderFlowMapView(log, state);
+      const flowChainOnlyHtml = renderFlowMapView(log, {
+        ...state,
+        showExceptions: false,
+        showChain: true
+      });
+      const firstExceptionLabel = log.flowGraph.exceptionLoops[0].label;
+      assert.ok(
+        flowHtml.includes(firstExceptionLabel),
+        "Exception loop label shown when showExceptions is true"
+      );
+      assert.ok(
+        !flowChainOnlyHtml.includes(firstExceptionLabel),
+        "Exception loop label NOT shown when only Highlight Delay Chain is active"
+      );
+      assert.ok(
+        flowChainOnlyHtml.includes("chain-horizontal"),
+        "Delay chain banner IS shown when Highlight Delay Chain is active"
+      );
       const delayHtml = renderDelayView(log, state);
       const capHtml = renderCapacityView(log, state);
       const cmpHtml = renderComparisonView(log, state);
