@@ -5,7 +5,7 @@
  * resolved dynamically through `schemaTexts.js` (default schema profiles + user overrides).
  */
 
-import { getResolvedLog } from "./schemaTexts.js?v=12";
+import { getResolvedLog } from "./schemaTexts.js?v=13";
 
 export const RAW_DEMO_LOGS = {
   "order-management": {

@@ -8,7 +8,7 @@ import {
   renderDelayThresholdControl,
   renderEditExplanationsButton,
   renderPageTitleBlock
-} from "./pageGuides.js?v=12";
+} from "./pageGuides.js?v=13";
 
 export function renderOverviewBody(log, state) {
   const slaDays = state && typeof state.slaThresholdDays === "number" ? state.slaThresholdDays : log.defaultSlaDays;

@@ -7,7 +7,7 @@ import {
   renderDelayThresholdControl,
   renderEditExplanationsButton,
   renderPageTitleBlock
-} from "./pageGuides.js?v=12";
+} from "./pageGuides.js?v=13";
 
 function renderOrderManagementPaths(showExceptions, showChain, selectedStepId) {
   const hi = showChain;

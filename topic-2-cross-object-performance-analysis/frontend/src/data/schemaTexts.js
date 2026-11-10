@@ -940,10 +940,6 @@ export function renderSchemaTextEditorModal(rawLog, state, isOpen) {
               Applies across all 6 pages for logs matching <strong>${escapeHtml(log.schemaSummary)}</strong>
             </div>
           </div>
-
-          <div style="display:flex; align-items:center; gap:8px;">
-            <button class="btn btn-sm" data-action="close-modal" aria-label="Close editor">Close</button>
-          </div>
         </div>
 
         <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid var(--border-soft); flex-wrap:wrap;">

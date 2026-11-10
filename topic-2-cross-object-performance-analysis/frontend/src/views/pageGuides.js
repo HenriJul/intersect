@@ -2,7 +2,7 @@
  * Sidebar Page Icons, Title + Info Button Header Helper, and Page-Specific Guide Overlays.
  */
 
-import { computeEmpiricalCohort } from "../data/empiricalCohortData.js?v=12";
+import { computeEmpiricalCohort } from "../data/empiricalCohortData.js?v=13";
 
 export const PAGE_ICONS = {
   overview: `<svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>`,
@@ -259,22 +259,18 @@ export function renderPageInfoOverlay(pageId, isOpen) {
   return `
     <div class="modal-overlay" data-action="close-modal-backdrop">
       <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="guide-modal-title">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-          <div style="display:flex; align-items:center; gap:9px;">
-            <span style="width:30px; height:30px; border-radius:8px; background:var(--bg-muted); display:inline-flex; align-items:center; justify-content:center; color:var(--text-primary);">
-              ${PAGE_ICONS[pageId] || ""}
-            </span>
-            <div>
-              <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">
-                How to use this page
-              </div>
-              <h2 id="guide-modal-title" style="margin:0; font-size:18px; font-weight:700; letter-spacing:-0.02em;">
-                ${guide.title}
-              </h2>
+        <div style="display:flex; align-items:center; gap:9px;">
+          <span style="width:30px; height:30px; border-radius:8px; background:var(--bg-muted); display:inline-flex; align-items:center; justify-content:center; color:var(--text-primary);">
+            ${PAGE_ICONS[pageId] || ""}
+          </span>
+          <div>
+            <div style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; color:var(--text-muted);">
+              How to use this page
             </div>
+            <h2 id="guide-modal-title" style="margin:0; font-size:18px; font-weight:700; letter-spacing:-0.02em;">
+              ${guide.title}
+            </h2>
           </div>
-
-          <button class="btn btn-sm" data-action="close-modal" aria-label="Close guide">Close</button>
         </div>
 
         <p style="margin:12px 0 0; font-size:13.5px; color:var(--text-secondary);">

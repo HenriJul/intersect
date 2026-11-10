@@ -2,13 +2,13 @@
  * Subpage 3: Delay Breakdown
  */
 
-import { getResolvedStepTexts } from "../data/schemaTexts.js?v=12";
+import { getResolvedStepTexts } from "../data/schemaTexts.js?v=13";
 import {
   computeStepSlaStatus,
   renderDelayThresholdControl,
   renderEditExplanationsButton,
   renderPageTitleBlock
-} from "./pageGuides.js?v=12";
+} from "./pageGuides.js?v=13";
 
 export function renderDelayBody(log, state) {
   const step = log.steps[state.selectedStepId] || log.steps[log.defaultStepId];

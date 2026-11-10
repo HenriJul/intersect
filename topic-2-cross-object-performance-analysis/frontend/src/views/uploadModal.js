@@ -8,9 +8,8 @@ export function renderUploadModal(isOpen) {
   return `
     <div class="modal-overlay" data-action="close-modal-backdrop">
       <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="upload-title">
-        <div style="display:flex; align-items:center; justify-content:space-between;">
+        <div>
           <h2 id="upload-title" style="margin:0; font-size:17.5px; font-weight:700;">Upload Event Log</h2>
-          <button class="btn btn-sm" data-action="close-modal">Close</button>
         </div>
 
         <div class="upload-dropzone">

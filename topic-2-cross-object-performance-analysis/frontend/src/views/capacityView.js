@@ -7,7 +7,7 @@ import {
   renderDelayThresholdControl,
   renderEditExplanationsButton,
   renderPageTitleBlock
-} from "./pageGuides.js?v=12";
+} from "./pageGuides.js?v=13";
 
 function renderTimelineChartSvg(timeline, slaRatio = 1.0) {
   const width = 620;

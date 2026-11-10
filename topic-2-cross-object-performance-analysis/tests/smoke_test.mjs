@@ -3,24 +3,26 @@
  */
 
 import assert from "node:assert/strict";
-import { DEMO_LOGS, RAW_DEMO_LOGS } from "../frontend/src/data/demoPayloads.js?v=12";
+import { DEMO_LOGS, RAW_DEMO_LOGS } from "../frontend/src/data/demoPayloads.js?v=13";
 import {
   computeEmpiricalCohort,
   evaluateEmpiricalWhatIf
-} from "../frontend/src/data/empiricalCohortData.js?v=12";
+} from "../frontend/src/data/empiricalCohortData.js?v=13";
 import {
   getResolvedLog,
   renderSchemaTextEditorModal,
   resetAllSchemaExplanations,
   saveFullSchemaExplanations
-} from "../frontend/src/data/schemaTexts.js?v=12";
-import { renderCapacityView } from "../frontend/src/views/capacityView.js?v=12";
-import { renderComparisonView } from "../frontend/src/views/comparisonView.js?v=12";
-import { renderDelayView } from "../frontend/src/views/delayView.js?v=12";
-import { renderFlowMapView } from "../frontend/src/views/flowMapView.js?v=12";
-import { renderOverviewView } from "../frontend/src/views/overviewView.js?v=12";
-import { renderStarterView } from "../frontend/src/views/starterView.js?v=12";
-import { renderTimelineView } from "../frontend/src/views/timelineView.js?v=12";
+} from "../frontend/src/data/schemaTexts.js?v=13";
+import { renderCapacityView } from "../frontend/src/views/capacityView.js?v=13";
+import { renderComparisonView } from "../frontend/src/views/comparisonView.js?v=13";
+import { renderDelayView } from "../frontend/src/views/delayView.js?v=13";
+import { renderFlowMapView } from "../frontend/src/views/flowMapView.js?v=13";
+import { renderOverviewView } from "../frontend/src/views/overviewView.js?v=13";
+import { renderPageInfoOverlay } from "../frontend/src/views/pageGuides.js?v=13";
+import { renderStarterView } from "../frontend/src/views/starterView.js?v=13";
+import { renderTimelineView } from "../frontend/src/views/timelineView.js?v=13";
+import { renderUploadModal } from "../frontend/src/views/uploadModal.js?v=13";
 
 const starterHtml = renderStarterView();
 assert.ok(starterHtml.includes("Intersect"), "Starter view should render brand name");
@@ -106,6 +108,19 @@ for (const logId of ["order-management", "ocel2-p2p"]) {
       assert.ok(modalHtml.includes("Step Explanations"), "Modal includes Step Explanations tab");
       assert.ok(modalHtml.includes("Team Workload"), "Modal includes Team Workload tab");
       assert.ok(modalHtml.includes("Compare &amp; Timeline"), "Modal includes Compare & Timeline tab");
+
+      // Verify overlays only have a single close/cancel button (no duplicate Close + Cancel)
+      const infoHtml = renderPageInfoOverlay("overview", true);
+      const uploadHtml = renderUploadModal(true);
+      for (const [overlayName, overlayHtml] of [
+        ["Page Info Overlay", infoHtml],
+        ["Explanation Editor Modal", modalHtml],
+        ["Upload Modal", uploadHtml]
+      ]) {
+        const closeCount = (overlayHtml.match(/data-action="close-modal"/g) || []).length;
+        assert.equal(closeCount, 1, `${overlayName} should have exactly 1 close/cancel button`);
+      }
+
       assert.ok(
         !tlHtml.includes("On-Time (&le; 3.0d threshold) · 4.6 days"),
         "No contradictory On-Time badge on Timeline"

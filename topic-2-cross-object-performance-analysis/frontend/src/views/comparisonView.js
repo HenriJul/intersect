@@ -2,12 +2,12 @@
  * Subpage 5: Compare Cases
  */
 
-import { evaluateEmpiricalWhatIf } from "../data/empiricalCohortData.js?v=12";
+import { evaluateEmpiricalWhatIf } from "../data/empiricalCohortData.js?v=13";
 import {
   renderDelayThresholdControl,
   renderEditExplanationsButton,
   renderPageTitleBlock
-} from "./pageGuides.js?v=12";
+} from "./pageGuides.js?v=13";
 
 function formatEur(num) {
   if (num >= 1000000) return `€${(num / 1000000).toFixed(2)}M`;
