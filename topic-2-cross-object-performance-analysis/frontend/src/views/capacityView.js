@@ -5,9 +5,8 @@
 import {
   computeOverviewSlaMetrics,
   renderDelayThresholdControl,
-  renderFocusStepBanner,
   renderPageTitleBlock
-} from "./pageGuides.js?v=9";
+} from "./pageGuides.js?v=10";
 
 function renderTimelineChartSvg(timeline, slaRatio = 1.0) {
   const width = 620;
@@ -97,7 +96,7 @@ export function renderTeamChartCard(activeTeam, log, state) {
   return `
     <div class="card sub-animate">
       <div class="card-title">
-        <span>${activeTeam.name} — Load &amp; Empirical Delayed Backlog (&gt; ${slaDays.toFixed(1)}d)</span>
+        <span>${activeTeam.name} — Load & Delayed Backlog (&gt; ${slaDays.toFixed(1)}d)</span>
         <span style="font-size:12px; font-weight:500; color:var(--text-muted);">Bars: Load % · Line: Delayed Cases</span>
       </div>
 
@@ -107,14 +106,9 @@ export function renderTeamChartCard(activeTeam, log, state) {
 
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:16px; padding-top:14px; border-top:1px solid var(--border-soft); flex-wrap:wrap;">
         <span class="badge badge-red">${activeTeam.peakSummary}</span>
-        <div style="display:flex; gap:8px;">
-          <button class="btn btn-sm" data-action="goto-page" data-page="timeline">
-            View Case Timeline
-          </button>
-          <button class="btn btn-sm btn-dark" data-action="goto-page" data-page="compare">
-            Compare Cases →
-          </button>
-        </div>
+        <button class="btn btn-sm" data-action="goto-page" data-page="timeline">
+          View Case Timeline →
+        </button>
       </div>
     </div>
   `;
@@ -131,8 +125,6 @@ export function renderCapacityView(log, state) {
         ${renderDelayThresholdControl(state)}
       </div>
     </div>
-
-    ${renderFocusStepBanner(log, state, { contextNote: `Focusing on ${activeTeam.name}` })}
 
     <div class="split-sidebar-grid">
       <div class="team-list">

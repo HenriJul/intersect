@@ -6,7 +6,7 @@ import {
   computeStepSlaStatus,
   renderDelayThresholdControl,
   renderPageTitleBlock
-} from "./pageGuides.js?v=9";
+} from "./pageGuides.js?v=10";
 
 function renderOrderManagementPaths(showExceptions, showChain, selectedStepId) {
   const hi = showChain;
@@ -69,23 +69,6 @@ function renderP2PPaths(showExceptions, showChain, selectedStepId) {
   `;
 }
 
-function renderGenericFlowPaths(log) {
-  const { tracks = [], flowGraph = {} } = log;
-  const singleSteps = flowGraph.singleSteps || [];
-  const sharedSteps = flowGraph.sharedSteps || [];
-
-  return tracks
-    .map((t) => {
-      const xs = [
-        ...singleSteps.filter((s) => s.track === t.id).map((s) => s.x),
-        ...sharedSteps.filter((g) => (g.tracksJoined || []).includes(t.id)).map((g) => g.x)
-      ].sort((a, b) => a - b);
-      if (xs.length < 2) return "";
-      return `<path d="M ${xs[0]} ${t.y} L ${xs[xs.length - 1]} ${t.y}" stroke="${t.color}" stroke-width="2.2" fill="none" stroke-opacity="0.55" />`;
-    })
-    .join("");
-}
-
 function renderFlowDiagramSvg(log, state) {
   const { tracks, flowGraph } = log;
   const trackMap = Object.fromEntries(tracks.map((t) => [t.id, t]));
@@ -107,9 +90,7 @@ function renderFlowDiagramSvg(log, state) {
   const paths =
     log.logId === "order-management"
       ? renderOrderManagementPaths(state.showExceptions, state.showChain, state.selectedStepId)
-      : log.logId === "ocel2-p2p"
-      ? renderP2PPaths(state.showExceptions, state.showChain, state.selectedStepId)
-      : renderGenericFlowPaths(log);
+      : renderP2PPaths(state.showExceptions, state.showChain, state.selectedStepId);
 
   const singleNodes = flowGraph.singleSteps
     .map((s) => {
@@ -160,24 +141,19 @@ function renderFlowDiagramSvg(log, state) {
         .join("");
 
       return `
-        <g class="flow-step-clickable"
-           tabindex="0"
-           role="button"
-           aria-label="${g.label} — ${slaInfo.statusLabel}"
-           data-action="select-step"
-           data-step-id="${g.id}">
+        <g class="flow-step-clickable" data-action="select-step" data-step-id="${g.id}">
           <rect x="${g.x - 14}" y="${g.yTop}" width="28" height="${height}" rx="10"
                 fill="${isSelected ? "var(--svg-gate-selected-fill)" : "var(--svg-gate-fill)"}"
                 stroke="${isSelected ? "var(--text-primary)" : accent}" />
           ${dots}
-          <rect class="step-card" x="${g.x - 58}" y="${midY - 21}" width="116" height="42" rx="8"
+          <rect class="step-card" x="${g.x - 55}" y="${midY - 21}" width="110" height="42" rx="8"
                 fill="${isSelected ? "var(--btn-dark-bg)" : "var(--svg-node-bg)"}"
                 stroke="${isSelected ? "var(--btn-dark-bg)" : accent}"
                 stroke-width="${isSelected ? "2" : "1.35"}" />
           <text x="${g.x}" y="${midY - 3}" text-anchor="middle" font-size="10.5" font-weight="600"
                 fill="${isSelected ? "var(--btn-dark-fg)" : "var(--text-primary)"}">${g.label}</text>
-          <text x="${g.x}" y="${midY + 12}" text-anchor="middle" font-size="9.2" font-weight="600"
-                fill="${isSelected ? (slaInfo.severity === "red" ? "#f87171" : "#fbbf24") : accent}">${slaInfo.gateTag}</text>
+          <text x="${g.x}" y="${midY + 12}" text-anchor="middle" font-size="9.5" font-weight="600"
+                fill="${isSelected ? (slaInfo.severity === "red" ? "#f87171" : "#fbbf24") : accent}">${g.waitTag}</text>
         </g>
       `;
     })
@@ -203,14 +179,6 @@ export function renderFlowBody(log, state) {
       <div class="diagram-frame">
         ${renderFlowDiagramSvg(log, state)}
       </div>
-
-      ${
-        log.contextTypesNote
-          ? `<div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--border-soft); font-size:11.5px; color:var(--text-muted);">
-              <strong>OCEL 2.0 Object Type Mapping (${log.objectTypeCount} types):</strong> ${log.contextTypesNote}
-            </div>`
-          : ""
-      }
 
       ${
         state.showChain
@@ -246,8 +214,8 @@ export function renderFlowBody(log, state) {
           <div style="font-size:15.5px; font-weight:700;">${step.name}</div>
         </div>
         <div>
-          <div class="bn-stat-label">Avg Wait (Med / IQR)</div>
-          <div style="font-size:15px; font-weight:600;">${step.avgWait} <span style="font-size:12px; color:var(--text-muted); font-weight:500;">(${step.medianWait} · ${step.iqrWait})</span></div>
+          <div class="bn-stat-label">Avg Wait</div>
+          <div style="font-size:15px; font-weight:600;">${step.avgWait}</div>
         </div>
         <div>
           <div class="bn-stat-label">Threshold Status</div>

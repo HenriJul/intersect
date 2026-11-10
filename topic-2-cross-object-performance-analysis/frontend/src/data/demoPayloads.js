@@ -14,28 +14,11 @@ export const DEMO_LOGS = {
     objectTypeCount: 6,
     defaultStepId: "create-package",
     defaultSlaDays: 3.0,
-    scenarioHeadline: "Why do 488 customer packages wait > 3 days in warehouse staging?",
-    ocelObjectTypes: ["orders", "items", "packages", "employees", "customers", "products"],
-    ocelEventTypes: [
-      "place order",
-      "confirm order",
-      "item out of stock",
-      "reorder item",
-      "pick item",
-      "pay order",
-      "create package",
-      "send package",
-      "failed delivery",
-      "package delivered",
-      "payment reminder"
-    ],
-    contextTypesNote:
-      "4 active flow lanes shown (`orders`, `items`, `employees`, `packages`); static master types `customers` (17) and `products` (20) are filtered as catalog context to prevent false synchronization waits.",
 
     overviewKpis: [
       { label: "Tracked Objects", value: "10,840", sub: "6 object types · 21,008 events" },
-      { label: "Top Impact Bottleneck", value: "Create Package", sub: "3.8d avg wait · 4,203 pkg-days" },
-      { label: "Delayed Order Value", value: "€312,400", sub: "488 delayed packages (> 3.0d)" }
+      { label: "Slowest Shared Step", value: "Create Package", sub: "3.8 days avg wait" },
+      { label: "Delayed Order Value", value: "€312,400", sub: "468 delayed packages" }
     ],
 
     tracks: [
@@ -109,22 +92,13 @@ export const DEMO_LOGS = {
         severity: "red",
         name: "Create Package",
         avgWait: "3.8 days",
-        waitDaysNum: 3.8,
-        medianWait: "3.3d",
-        iqrWait: "2.1–4.6d",
-        sampleN: 1106,
-        impactScore: 94,
-        objectWaitDays: "4,203 pkg-days",
         responsibleTeamId: "warehousing",
-        responsibleTeamName: "Warehousing (7 staff)",
         affectedValue: "€312,400",
-        volume: "1,106 multi-item pools (1,128 total)",
+        volume: "1,106 packages",
         mainDelaySource: "Out-of-Stock Items (74%)",
-        primaryCauseTag: "OPerA Sync: 3.0d (2.4d pool + 0.6d lag) + 0.8d queue",
-        recommendation:
-          "Split ready in-stock items from out-of-stock backorders after 48h instead of holding all ~6.8 items of the package on the staging shelf.",
+        primaryCauseTag: "Waiting for Items (78%)",
         summaryText:
-          "Packing cannot start until every item belonging to the shipment has arrived at the packing station and a warehouse employee is available. In OPerA terms, total wait is 3.8 days: 2.4 days of item pooling + 0.6 days of cross-order lagging (= 3.0 days synchronization time) plus 0.8 days of post-sync team queue.",
+          "Packing cannot start until every item belonging to the shipment has arrived at the packing station and a warehouse employee is available. Most of the 3.8-day delay happens because already-picked items sit waiting on the shelf while out-of-stock items from the same order are reordered.",
         breakdown: {
           totalDays: 3.8,
           allItemsDays: 2.4,
@@ -191,22 +165,13 @@ export const DEMO_LOGS = {
         severity: "amber",
         name: "Pay Order",
         avgWait: "6.1 days",
-        waitDaysNum: 6.1,
-        medianWait: "4.9d",
-        iqrWait: "3.1–8.2d",
-        sampleN: 2000,
-        impactScore: 82,
-        objectWaitDays: "3,453 dunning-days",
         responsibleTeamId: "sales",
-        responsibleTeamName: "Sales & Billing (5 staff)",
         affectedValue: "€428,900",
-        volume: "2,000 orders (566 dunning)",
+        volume: "2,000 orders",
         mainDelaySource: "Late Delivery (68%)",
-        primaryCauseTag: "OPerA Sync: 4.3d (1.1d pool + 3.2d lag) + 1.8d queue",
-        recommendation:
-          "Invoice delivered partial shipments immediately upon parcel proof-of-delivery rather than holding billing for backordered items.",
+        primaryCauseTag: "Waiting for Delivery (71%)",
         summaryText:
-          "Customer orders are only paid once all items from the order have been packed, shipped, and received by the customer. When warehouse backlogs or split packages delay delivery, invoice settlement stalls for an average of 6.1 days (4.3d cross-object synchronization + 1.8d billing follow-up).",
+          "Customer orders are only paid once all items from the order have been packed, shipped, and received by the customer. When warehouse backlogs or split packages delay delivery, invoice settlement stalls for an average of 6.1 days.",
         breakdown: {
           totalDays: 6.1,
           allItemsDays: 1.1,
@@ -273,20 +238,11 @@ export const DEMO_LOGS = {
         severity: "blue",
         name: "Package Delivered",
         avgWait: "0.8 days",
-        waitDaysNum: 0.8,
-        medianWait: "0.6d",
-        iqrWait: "0.3–1.2d",
-        sampleN: 1128,
-        impactScore: 61,
-        objectWaitDays: "902 dispatch-days",
         responsibleTeamId: "shipment",
-        responsibleTeamName: "Shipment (6 staff)",
         affectedValue: "311 retries",
         volume: "1,128 packages",
         mainDelaySource: "Shipment Team Busy (63%)",
-        primaryCauseTag: "Post-Sync Queue: 0.72d (90%) + 0.08d lag",
-        recommendation:
-          "Stagger warehouse packing waves into 2-hour dispatch windows and send automated customer arrival notifications to reduce the 311 failed delivery retries.",
+        primaryCauseTag: "Team Queue (90%)",
         summaryText:
           "Once packages are sealed, they must be dispatched and delivered by the 6-person Shipment team. Because the warehouse releases packed boxes in large waves after restocking arrives, the shipment team becomes overloaded and packages queue up waiting for a driver.",
         breakdown: {
@@ -355,20 +311,11 @@ export const DEMO_LOGS = {
         severity: "blue",
         name: "Confirm Order",
         avgWait: "0.7 days",
-        waitDaysNum: 0.7,
-        medianWait: "0.7d",
-        iqrWait: "0.3–1.1d",
-        sampleN: 2000,
-        impactScore: 44,
-        objectWaitDays: "540 order-days",
         responsibleTeamId: "sales",
-        responsibleTeamName: "Sales (5 staff)",
         affectedValue: "€118,000",
         volume: "2,000 orders",
         mainDelaySource: "Sales Team Queue (81%)",
-        primaryCauseTag: "Post-Sync Queue: 0.57d (81%) + 0.13d lag",
-        recommendation:
-          "Auto-confirm standard B2B catalog orders under €1,500 so Sales staff focus only on custom pricing and credit holds.",
+        primaryCauseTag: "Team Queue (81%)",
         summaryText:
           "Every incoming customer order must be reviewed and confirmed by a Sales representative before the warehouse is allowed to start picking items. Most of the 0.7-day wait comes from orders queuing for one of the 5 Sales employees during high-volume mornings.",
         breakdown: {
@@ -498,52 +445,38 @@ export const DEMO_LOGS = {
 
     comparison: {
       totalClusters: 1106,
-      baseDelayedAt3d: 488,
+      baseDelayedAt3d: 468,
       baseStalledEur: 312400,
       baseRippleEvents: 566,
-      primaryFactorShare: 0.74,
       rippleUnit: "payment reminders",
       delayTargetLabel: "Out-of-Stock Item Delay",
-      testNote: "Mann–Whitney U (two-sided) · 95% bootstrap CI (1,000 resamples) · Benjamini–Hochberg FDR",
       factors: [
         {
           title: "Has Out-of-Stock Item",
           multiplier: "3.4× slower",
-          cases: "n = 824 with · 282 without",
+          cases: "492 packages",
           withVal: "5.8 days",
-          withCi: "95% CI [5.4d, 6.2d]",
           withPct: 92,
           withoutVal: "1.7 days",
-          withoutCi: "95% CI [1.5d, 1.9d]",
-          withoutPct: 27,
-          cliffsDelta: "Cliff's δ = +0.68 (large)",
-          pValBh: "p_BH < 0.001"
+          withoutPct: 27
         },
         {
           title: "6+ Items in Package",
           multiplier: "2.3× slower",
-          cases: "n = 678 with · 428 without",
+          cases: "384 packages",
           withVal: "4.9 days",
-          withCi: "95% CI [4.6d, 5.2d]",
           withPct: 78,
           withoutVal: "2.1 days",
-          withoutCi: "95% CI [1.9d, 2.3d]",
-          withoutPct: 33,
-          cliffsDelta: "Cliff's δ = +0.49 (large)",
-          pValBh: "p_BH < 0.001"
+          withoutPct: 33
         },
         {
           title: "Warehouse Load Above 80%",
           multiplier: "1.9× slower",
-          cases: "n = 276 with · 830 without",
+          cases: "276 packages",
           withVal: "1.5d queue",
-          withCi: "95% CI [1.3d, 1.7d]",
           withPct: 60,
           withoutVal: "0.8d queue",
-          withoutCi: "95% CI [0.7d, 0.9d]",
-          withoutPct: 31,
-          cliffsDelta: "Cliff's δ = +0.38 (medium)",
-          pValBh: "p_BH = 0.002"
+          withoutPct: 31
         }
       ]
     },
@@ -552,10 +485,8 @@ export const DEMO_LOGS = {
       delayedCase: {
         caseId: "Package p-660016",
         meta: "Danube Pharmaceuticals BV · Orders o-990007 & o-990023 · €1,014.99",
-        gateWaitDays: 10.0,
-        duration: "10.0d gate wait",
-        endToEndDuration: "19.0d end-to-end",
-        waitSummary: "10.0d cross-object wait (19.0d end-to-end)",
+        duration: "10.0 days wait",
+        waitSummary: "19.0 days total · missing items reordered",
         syncStartPct: 45,
         syncEndPct: 79,
         queueEndPct: 86,
@@ -623,10 +554,8 @@ export const DEMO_LOGS = {
       healthyCase: {
         caseId: "Package p-660007",
         meta: "AlpenTech Innovations AG · Order o-990011 · €778.98",
-        gateWaitDays: 0.9,
-        duration: "0.9d gate wait",
-        endToEndDuration: "4.6d end-to-end",
-        waitSummary: "0.9d item alignment · 4.6d total order-to-delivery",
+        duration: "0.9 days wait",
+        waitSummary: "4.6 days total · all items in stock",
         syncStartPct: 36,
         syncEndPct: 52,
         queueEndPct: 68,
@@ -684,35 +613,11 @@ export const DEMO_LOGS = {
     objectTypeCount: 7,
     defaultStepId: "execute-payment",
     defaultSlaDays: 4.0,
-    scenarioHeadline: "Why is €1.42M in supplier payments delayed across 2.5 partial receipts per PO?",
-    ocelObjectTypes: [
-      "purchase_requisition",
-      "quotation",
-      "purchase_order",
-      "material",
-      "goods receipt",
-      "invoice receipt",
-      "payment"
-    ],
-    ocelEventTypes: [
-      "Create Purchase Requisition",
-      "Delegate Purchase Requisition Approval",
-      "Approve Purchase Requisition",
-      "Create Request for Quotation",
-      "Create Purchase Order",
-      "Approve Purchase Order",
-      "Create Goods Receipt",
-      "Create Invoice Receipt",
-      "Perform Two-Way Match",
-      "Execute Payment"
-    ],
-    contextTypesNote:
-      "7 OCEL object types mapped onto 4 lifecycle lanes: `material` (2,296 line items) is grouped with Requisitions, `quotation` (927 RFQs) with Purchase Orders, and `invoice receipt` + `payment` on the Finance lane.",
 
     overviewKpis: [
       { label: "Tracked Objects", value: "9,543", sub: "7 object types · 14,671 events" },
-      { label: "Top Impact Bottleneck", value: "Execute Payment", sub: "5.3d avg wait · 6,180 pay-days" },
-      { label: "Delayed Invoice Value", value: "€1.42M", sub: "698 delayed payments (> 4.0d)" }
+      { label: "Slowest Shared Step", value: "Execute Payment", sub: "5.3 days avg wait" },
+      { label: "Delayed Invoice Value", value: "€1.42M", sub: "512 delayed payments" }
     ],
 
     tracks: [
@@ -787,22 +692,13 @@ export const DEMO_LOGS = {
         severity: "red",
         name: "Execute Payment",
         avgWait: "5.3 days",
-        waitDaysNum: 5.3,
-        medianWait: "4.7d",
-        iqrWait: "2.9–7.1d",
-        sampleN: 1166,
-        impactScore: 96,
-        objectWaitDays: "6,180 pay-days",
         responsibleTeamId: "finance",
-        responsibleTeamName: "Finance Department (5,048 events)",
         affectedValue: "€1.42M",
         volume: "1,166 payments",
         mainDelaySource: "Partial Goods Receipts (61%)",
-        primaryCauseTag: "OPerA Sync: 2.5d (0.85d pool + 1.65d lag) + 2.8d queue",
-        recommendation:
-          "Consolidate partial goods-receipt matching at the PO milestone level and schedule a mid-week automated payment batch run.",
+        primaryCauseTag: "Split Deliveries & Finance Queue",
         summaryText:
-          "Supplier invoices can only be paid once the purchase order, all physical goods receipts, and the two-way invoice match are complete. Payments wait 5.3 days on average (0.85d receipt pooling + 1.65d document lagging + 2.8d Finance batch queue) because suppliers ship in partial lots.",
+          "Supplier invoices can only be paid once the purchase order, all physical goods receipts, and the two-way invoice match are complete. Payments wait 5.3 days on average because suppliers ship orders in multiple partial deliveries and the Finance team is tied up matching earlier partial receipts.",
         breakdown: {
           totalDays: 5.3,
           allItemsDays: 0.85,
@@ -869,20 +765,11 @@ export const DEMO_LOGS = {
         severity: "amber",
         name: "Approve Purchase Order",
         avgWait: "3.6 days",
-        waitDaysNum: 3.6,
-        medianWait: "2.8d",
-        iqrWait: "1.6–4.9d",
-        sampleN: 1598,
-        impactScore: 81,
-        objectWaitDays: "5,753 PO-days",
         responsibleTeamId: "order-mgr",
-        responsibleTeamName: "Procurement Approvers (2,205 approvals)",
         affectedValue: "€890,000",
         volume: "1,598 POs",
         mainDelaySource: "Order Manager Queue (72%)",
-        primaryCauseTag: "OPerA Sync: 1.0d lag + 2.6d approver queue",
-        recommendation:
-          "Enforce a 24h auto-escalation rule on delegated PR/PO approvals so requisitions do not stall across multiple manager inboxes.",
+        primaryCauseTag: "Approver Queue (72%)",
         summaryText:
           "Before an order can be sent to a vendor, an Order Manager must review the quotation and sign off on the purchase order. Most of the 3.6-day wait occurs when approvals are delegated between managers or wait in the approver inbox.",
         breakdown: {
@@ -944,22 +831,13 @@ export const DEMO_LOGS = {
         severity: "blue",
         name: "Perform Two-Way Match",
         avgWait: "1.9 days",
-        waitDaysNum: 1.9,
-        medianWait: "1.4d",
-        iqrWait: "0.5–2.6d",
-        sampleN: 1941,
-        impactScore: 68,
-        objectWaitDays: "3,688 match-days",
         responsibleTeamId: "finance",
-        responsibleTeamName: "Finance Department (5,048 events)",
         affectedValue: "€640,000",
         volume: "1,941 matches",
         mainDelaySource: "Missing Goods Receipt (58%)",
-        primaryCauseTag: "0.5d direct OPerA sync + 1.4d dock-to-post GR lag",
-        recommendation:
-          "Require warehouse dock-to-system goods receipt booking within 12h so physical arrivals are logged before vendor e-invoices arrive.",
+        primaryCauseTag: "Waiting for Goods Receipt (82%)",
         summaryText:
-          "Before Finance can release an invoice for payment, they must match the vendor's invoice against the warehouse's goods receipt. Total cumulative wait is 1.9 days (0.48d direct post-posting OPerA wait plus 1.42d upstream warehouse dock-to-post goods receipt lag).",
+          "Before Finance can release an invoice for payment, they must match the vendor's invoice against the warehouse's goods receipt. In 58% of delayed cases, the digital invoice arrives first while the physical delivery is still waiting at the warehouse dock to be logged.",
         breakdown: {
           totalDays: 1.9,
           allItemsDays: 0.27,
@@ -1026,20 +904,11 @@ export const DEMO_LOGS = {
         severity: "blue",
         name: "Create Goods Receipt",
         avgWait: "2.8 days",
-        waitDaysNum: 2.8,
-        medianWait: "1.9d",
-        iqrWait: "0.9–3.8d",
-        sampleN: 1598,
-        impactScore: 64,
-        objectWaitDays: "4,474 PO-days",
         responsibleTeamId: "warehouse-p2p",
-        responsibleTeamName: "Warehouse Department (4,042 receipts)",
         affectedValue: "4,042 receipts",
-        volume: "1,598 POs (4,042 receipts)",
+        volume: "1,598 POs",
         mainDelaySource: "Split Shipments (64%)",
-        primaryCauseTag: "OPerA Sync: 2.3d (1.63d pool + 0.67d lag) + 0.5d queue",
-        recommendation:
-          "Enforce complete-lot shipping windows for Plant 4000 / Group 005 vendors to cut the 2.53 partial receipts per purchase order.",
+        primaryCauseTag: "Partial Shipments (58%)",
         summaryText:
           "Each time a supplier truck arrives, warehouse staff inspect the delivery and log a goods receipt against the purchase order. Because suppliers frequently split one purchase order into 2–3 partial deliveries, receiving takes 2.8 days on average across all shipments.",
         breakdown: {
@@ -1168,52 +1037,38 @@ export const DEMO_LOGS = {
 
     comparison: {
       totalClusters: 1166,
-      baseDelayedAt3d: 698,
+      baseDelayedAt3d: 512,
       baseStalledEur: 1420000,
       baseRippleEvents: 633,
-      primaryFactorShare: 0.61,
       rippleUnit: "extra invoice matches",
       delayTargetLabel: "Partial Delivery & Match Delay",
-      testNote: "Mann–Whitney U (two-sided) · 95% bootstrap CI (1,000 resamples) · Benjamini–Hochberg FDR",
       factors: [
         {
           title: "3+ Partial Goods Receipts on PO",
           multiplier: "2.9× slower",
-          cases: "n = 438 with · 728 without",
+          cases: "438 payments",
           withVal: "8.4 days",
-          withCi: "95% CI [7.9d, 8.9d]",
           withPct: 90,
           withoutVal: "2.9 days",
-          withoutCi: "95% CI [2.6d, 3.2d]",
-          withoutPct: 31,
-          cliffsDelta: "Cliff's δ = +0.64 (large)",
-          pValBh: "p_BH < 0.001"
+          withoutPct: 31
         },
         {
           title: "Delegated Requisition Approval",
           multiplier: "2.5× slower",
-          cases: "n = 122 with · 607 without",
+          cases: "122 requisitions",
           withVal: "11.2 days",
-          withCi: "95% CI [10.3d, 12.1d]",
           withPct: 84,
           withoutVal: "4.5 days",
-          withoutCi: "95% CI [4.1d, 4.9d]",
-          withoutPct: 34,
-          cliffsDelta: "Cliff's δ = +0.57 (large)",
-          pValBh: "p_BH < 0.001"
+          withoutPct: 34
         },
         {
           title: "Plant 4000 / Group 005 Vendors",
           multiplier: "2.2× slower",
-          cases: "n = 289 with · 877 without",
+          cases: "289 POs",
           withVal: "6.8 days",
-          withCi: "95% CI [6.3d, 7.3d]",
           withPct: 74,
           withoutVal: "3.1 days",
-          withoutCi: "95% CI [2.8d, 3.4d]",
-          withoutPct: 34,
-          cliffsDelta: "Cliff's δ = +0.44 (medium)",
-          pValBh: "p_BH < 0.001"
+          withoutPct: 34
         }
       ]
     },
@@ -1222,10 +1077,8 @@ export const DEMO_LOGS = {
       delayedCase: {
         caseId: "Payment payment:807",
         meta: "Chainring Champions Inc · PO purchase_order:1384 · €96,750",
-        gateWaitDays: 9.2,
-        duration: "9.2d gate wait",
-        endToEndDuration: "14.1d end-to-end",
-        waitSummary: "9.2d cross-object wait (14.1d end-to-end)",
+        duration: "9.2 days wait",
+        waitSummary: "14.1 days total · waiting on second delivery",
         syncStartPct: 16,
         syncEndPct: 72,
         queueEndPct: 92,
@@ -1273,10 +1126,8 @@ export const DEMO_LOGS = {
       healthyCase: {
         caseId: "Payment payment:6",
         meta: "Quality Helmets Co · PO purchase_order:17 · €53,700",
-        gateWaitDays: 1.5,
-        duration: "1.5d gate wait",
-        endToEndDuration: "7.2d end-to-end",
-        waitSummary: "1.5d post-receipt wait · 3.5h match alignment",
+        duration: "1.5 days wait",
+        waitSummary: "3.5 hours alignment · single full delivery",
         syncStartPct: 48,
         syncEndPct: 58,
         queueEndPct: 86,

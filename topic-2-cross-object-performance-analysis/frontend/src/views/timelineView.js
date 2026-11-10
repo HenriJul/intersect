@@ -2,12 +2,10 @@
  * Subpage 6: Case Timeline
  */
 
-import { computeComparisonMetrics } from "./comparisonView.js?v=9";
 import {
   renderDelayThresholdControl,
-  renderFocusStepBanner,
   renderPageTitleBlock
-} from "./pageGuides.js?v=9";
+} from "./pageGuides.js?v=10";
 
 export const TIMELINE_MODES = ["delayed", "healthy", "both"];
 
@@ -43,12 +41,8 @@ function renderSwimlaneSvg(caseObj, variant, selectedEventKey) {
 
           return `
             <g style="cursor:pointer;"
-               tabindex="0"
-               role="button"
-               aria-label="${lane.objectLabel} — ${ev.label} (${ev.time} · ${ev.actor})"
                data-action="select-timeline-event"
                data-ev-key="${evKey}"
-               data-ev-variant="${variant}"
                data-ev-label="${lane.objectLabel} — ${ev.label}"
                data-ev-meta="${ev.time} · ${ev.actor}">
               ${isSelected ? `<circle cx="${cx}" cy="${cy}" r="9.5" fill="none" stroke="var(--text-primary)" stroke-width="1.6" />` : ""}
@@ -81,7 +75,7 @@ function renderSwimlaneSvg(caseObj, variant, selectedEventKey) {
             stroke-dasharray="4 3" />
       <text x="${(syncX1 + syncX2) / 2}" y="18" text-anchor="middle" font-size="10" font-weight="600"
             fill="${isDelayed ? "var(--red)" : "var(--green)"}">
-        ${isDelayed ? "Waiting for Missing Objects (OPerA Sync)" : "Fast Object Alignment (OPerA Sync)"}
+        ${isDelayed ? "Waiting for Missing Objects" : "Object Alignment"}
       </text>
 
       <rect x="${syncX2}" y="${padT - 8}" width="${Math.max(6, queueX2 - syncX2)}" height="${totalH - padT - padB + 12}"
@@ -96,28 +90,19 @@ function renderSwimlaneSvg(caseObj, variant, selectedEventKey) {
 function renderCaseCard(caseObj, variant, state) {
   const slaDays =
     state && typeof state.slaThresholdDays === "number" ? state.slaThresholdDays : 3.0;
-  const gateWait =
-    typeof caseObj.gateWaitDays === "number"
-      ? caseObj.gateWaitDays
-      : parseFloat(caseObj.duration) || 0;
-  const exceedsSla = gateWait > slaDays;
-  const slaComparisonText = `${gateWait.toFixed(1)}d gate wait ${exceedsSla ? "&gt;" : "&le;"} ${slaDays.toFixed(1)}d threshold`;
-  const endToEndLabel = caseObj.endToEndDuration || caseObj.duration;
-
-  const activeEv =
-    state.selectedEventInfo &&
-    state.selectedEventKey &&
-    state.selectedEventKey.startsWith(`${variant}-`)
-      ? state.selectedEventInfo
-      : null;
+  const waitDays = parseFloat(caseObj.duration) || 0;
+  const isDelayed = waitDays > slaDays;
+  const slaNote = isDelayed
+    ? `&gt; ${slaDays.toFixed(1)}d threshold`
+    : `&le; ${slaDays.toFixed(1)}d threshold`;
 
   return `
     <div class="card sub-animate" style="margin-bottom:16px;">
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px; flex-wrap:wrap;">
         <div>
-          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-            <span class="badge ${exceedsSla ? "badge-red" : "badge-green"}">
-              ${exceedsSla ? "Delayed" : "On-Time"} (${slaComparisonText}) · ${endToEndLabel}
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span class="badge ${isDelayed ? "badge-red" : "badge-green"}">
+              ${isDelayed ? "Delayed" : "On-Time"} (${slaNote}) · ${caseObj.duration}
             </span>
             <strong style="font-size:15px;">${caseObj.caseId}</strong>
           </div>
@@ -125,14 +110,6 @@ function renderCaseCard(caseObj, variant, state) {
         </div>
 
         <span class="badge badge-neutral">${caseObj.waitSummary}</span>
-      </div>
-
-      <div class="timeline-inline-inspector ${activeEv ? "is-active" : ""}">
-        ${
-          activeEv
-            ? `<span><strong>Selected Event:</strong> ${activeEv.label}</span><span style="font-weight:600; color:var(--text-primary);">${activeEv.meta}</span>`
-            : `<span>Click (or press Enter on) any event dot below to inspect its exact timestamp and responsible actor right here</span>`
-        }
       </div>
 
       <div class="diagram-frame">
@@ -145,39 +122,18 @@ function renderCaseCard(caseObj, variant, state) {
 export function renderTimelineCardsRegion(log, state) {
   const tl = log.timeline;
   const mode = state.timelineMode || "delayed";
-  const step = log.steps[state.selectedStepId] || log.steps[log.defaultStepId];
-  const m = computeComparisonMetrics(log, state);
-  const slaDays =
-    state && typeof state.slaThresholdDays === "number" ? state.slaThresholdDays : 3.0;
+  const activeEv = state.selectedEventInfo;
 
   return `
     ${mode === "delayed" || mode === "both" ? renderCaseCard(tl.delayedCase, "delayed", state) : ""}
     ${mode === "healthy" || mode === "both" ? renderCaseCard(tl.healthyCase, "healthy", state) : ""}
 
-    <div class="card decision-closing-card sub-animate">
-      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap;">
-        <div style="flex:1; min-width:260px;">
-          <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-            <span class="badge badge-green">Recommended Decision — ${step.name}</span>
-            <span style="font-size:11.5px; color:var(--text-muted);">At -${state.whatIfReductionPct}% ${step.mainDelaySource}</span>
-          </div>
-          <div style="font-size:14.5px; font-weight:700; color:var(--text-primary); line-height:1.4;">
-            ${step.recommendation || ""}
-          </div>
-          <div style="font-size:12.5px; color:var(--text-secondary); margin-top:6px;">
-            Expected empirical impact across ${log.filename}: <strong>${m.recoveredCases} cases</strong> back &le; ${slaDays.toFixed(1)}d threshold · <strong>${m.unblockedEur}</strong> unblocked faster · <strong>${m.fewerRipples} ${log.comparison.rippleUnit}</strong>.
-          </div>
-        </div>
-
-        <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
-          <button class="btn" data-action="goto-page" data-page="compare">
-            ← Adjust What-If Simulator
-          </button>
-          <button class="btn btn-dark" data-action="goto-page" data-page="overview">
-            Back to Overview
-          </button>
-        </div>
-      </div>
+    <div style="font-size:12.5px; color:var(--text-secondary); padding:10px 14px; background:var(--bg-subtle); border-radius:var(--radius-sm); border:1px solid var(--border-soft); display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+      ${
+        activeEv
+          ? `<span><strong>${activeEv.label}</strong></span><span style="color:var(--text-muted);">${activeEv.meta}</span>`
+          : `<span style="color:var(--text-muted);">Click any event dot on the timeline to view its timestamp and actor</span>`
+      }
     </div>
   `;
 }
@@ -188,7 +144,7 @@ export function renderTimelineView(log, state) {
 
   return `
     <div class="page-header">
-      ${renderPageTitleBlock("Case Timeline", `Verified object lifecycles &amp; timestamps from ${log.filename}`)}
+      ${renderPageTitleBlock("Case Timeline", `Individual object timelines from ${log.filename}`)}
 
       <div class="header-controls">
         ${renderDelayThresholdControl(state)}
@@ -206,8 +162,6 @@ export function renderTimelineView(log, state) {
         </div>
       </div>
     </div>
-
-    ${renderFocusStepBanner(log, state, { contextNote: "Real OCEL 2.0 object IDs & timestamps" })}
 
     <div id="timeline-cards-region">
       ${renderTimelineCardsRegion(log, state)}

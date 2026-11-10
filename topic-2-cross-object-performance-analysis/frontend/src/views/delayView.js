@@ -2,12 +2,12 @@
  * Subpage 3: Delay Breakdown
  */
 
-import { getResolvedStepTexts } from "../data/schemaTexts.js?v=9";
+import { getResolvedStepTexts } from "../data/schemaTexts.js?v=10";
 import {
   computeStepSlaStatus,
   renderDelayThresholdControl,
   renderPageTitleBlock
-} from "./pageGuides.js?v=9";
+} from "./pageGuides.js?v=10";
 
 export function renderDelayBody(log, state) {
   const step = log.steps[state.selectedStepId] || log.steps[log.defaultStepId];
@@ -15,17 +15,11 @@ export function renderDelayBody(log, state) {
   const slaInfo = computeStepSlaStatus(step, log, state.slaThresholdDays);
   const texts = getResolvedStepTexts(log, step.id);
   const showDescriptions = state.showDelayDescriptions !== false;
-  const operaSyncDays = Number((bd.allItemsDays + bd.otherObjectsDays).toFixed(2));
 
   return `
     <div class="card sub-animate" style="margin-bottom:18px;">
       <div class="card-title">
-        <div>
-          <span>Where Wait Time Goes — ${step.name} (${bd.totalDays} days avg)</span>
-          <div style="font-size:11.5px; font-weight:500; color:var(--text-muted); margin-top:2px;">
-            OPerA Synchronization = <strong>${operaSyncDays}d</strong> (${bd.allItemsDays}d pooling + ${bd.otherObjectsDays}d lagging) · Post-Sync Resource Queue = <strong>${bd.teamDays}d</strong>
-          </div>
-        </div>
+        <span>Where Wait Time Goes (${bd.totalDays} days avg)</span>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
           ${texts.isCustomized ? `<span class="badge badge-amber">Custom Schema Text</span>` : ""}
           <span class="badge ${slaInfo.badgeClass}">${slaInfo.statusLabel}</span>
@@ -37,12 +31,7 @@ export function renderDelayBody(log, state) {
         showDescriptions
           ? `
             <div class="delay-summary-callout">
-              <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; flex-wrap:wrap;">
-                <div class="delay-summary-label" style="margin-bottom:0;">Why This Step Is Delayed</div>
-                <span style="font-size:11px; color:var(--text-muted); font-weight:500;">
-                  Matched to ${texts.schemaSummary}
-                </span>
-              </div>
+              <div class="delay-summary-label">Why This Step Is Delayed</div>
               <p class="delay-summary-text">${texts.summaryText}</p>
             </div>
           `
@@ -70,7 +59,7 @@ export function renderDelayBody(log, state) {
       <div class="stat-columns-3">
         <div class="stat-col-item">
           <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); font-weight:600;">
-            <span class="dot amber"></span> Waiting for All Items (OPerA Pooling)
+            <span class="dot amber"></span> Waiting for All Items
           </div>
           <div style="font-size:19px; font-weight:700; margin-top:4px;">
             ${bd.allItemsDays}d <span style="font-size:13px; font-weight:500; color:var(--text-muted);">(${bd.allItemsPct}%)</span>
@@ -80,7 +69,7 @@ export function renderDelayBody(log, state) {
 
         <div class="stat-col-item">
           <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); font-weight:600;">
-            <span class="dot blue"></span> Waiting for Other Objects (OPerA Lagging)
+            <span class="dot blue"></span> Waiting for Other Objects
           </div>
           <div style="font-size:19px; font-weight:700; margin-top:4px;">
             ${bd.otherObjectsDays}d <span style="font-size:13px; font-weight:500; color:var(--text-muted);">(${bd.otherObjectsPct}%)</span>
@@ -90,7 +79,7 @@ export function renderDelayBody(log, state) {
 
         <div class="stat-col-item">
           <div style="display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-muted); font-weight:600;">
-            <span class="dot" style="background:var(--purple);"></span> Waiting for Team (Post-Sync Queue)
+            <span class="dot" style="background:var(--purple);"></span> Waiting for Team
           </div>
           <div style="font-size:19px; font-weight:700; margin-top:4px;">
             ${bd.teamDays}d <span style="font-size:13px; font-weight:500; color:var(--text-muted);">(${bd.teamPct}%)</span>
