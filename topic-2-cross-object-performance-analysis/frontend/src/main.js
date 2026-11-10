@@ -24,7 +24,7 @@ import {
   computeStepSlaStatus,
   renderPageInfoOverlay
 } from "./views/pageGuides.js?v=13";
-import { renderBrandMarkSvg, renderStarterView } from "./views/starterView.js?v=13";
+import { renderBrandMarkSvg, renderStarterView } from "./views/starterView.js?v=15";
 import {
   TIMELINE_MODES,
   renderTimelineCardsRegion,
@@ -217,9 +217,12 @@ function renderWorkspaceShellHtml() {
           <span>Upload Event Log</span>
         </button>
 
-        <div id="api-status-row" class="api-indicator">
-          <span class="dot ${state.apiStatus.connected ? "green" : "blue"}" style="width:6px; height:6px;"></span>
-          <span>${state.apiStatus.connected ? "Python API Connected" : "Static Demo Mode"}</span>
+        <div id="api-status-row" class="api-indicator" style="justify-content:space-between;">
+          <span style="display:inline-flex; align-items:center; gap:6px;">
+            <span class="dot ${state.apiStatus.connected ? "green" : "blue"}" style="width:6px; height:6px;"></span>
+            <span>${state.apiStatus.connected ? "Python API" : "Static Demo"}</span>
+          </span>
+          <span style="color:var(--text-faint);">Henri Julius</span>
         </div>
       </div>
     </aside>
@@ -281,8 +284,11 @@ function syncSidebarUI() {
   const apiRow = document.getElementById("api-status-row");
   if (apiRow) {
     apiRow.innerHTML = `
-      <span class="dot ${state.apiStatus.connected ? "green" : "blue"}" style="width:6px; height:6px;"></span>
-      <span>${state.apiStatus.connected ? "Python API Connected" : "Static Demo Mode"}</span>
+      <span style="display:inline-flex; align-items:center; gap:6px;">
+        <span class="dot ${state.apiStatus.connected ? "green" : "blue"}" style="width:6px; height:6px;"></span>
+        <span>${state.apiStatus.connected ? "Python API" : "Static Demo"}</span>
+      </span>
+      <span style="color:var(--text-faint);">Henri Julius</span>
     `;
   }
 }

@@ -20,12 +20,13 @@ import { renderDelayView } from "../frontend/src/views/delayView.js?v=13";
 import { renderFlowMapView } from "../frontend/src/views/flowMapView.js?v=14";
 import { renderOverviewView } from "../frontend/src/views/overviewView.js?v=13";
 import { renderPageInfoOverlay } from "../frontend/src/views/pageGuides.js?v=13";
-import { renderStarterView } from "../frontend/src/views/starterView.js?v=13";
+import { renderStarterView } from "../frontend/src/views/starterView.js?v=15";
 import { renderTimelineView } from "../frontend/src/views/timelineView.js?v=13";
 import { renderUploadModal } from "../frontend/src/views/uploadModal.js?v=13";
 
 const starterHtml = renderStarterView();
 assert.ok(starterHtml.includes("Intersect"), "Starter view should render brand name");
+assert.ok(starterHtml.includes("Henri Julius"), "Starter view should render author name");
 assert.ok(starterHtml.includes("Order Management"), "Starter dropdown resolves process title from schema");
 
 for (const logId of ["order-management", "ocel2-p2p"]) {

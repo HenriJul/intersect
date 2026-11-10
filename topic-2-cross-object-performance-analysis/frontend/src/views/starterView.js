@@ -56,6 +56,10 @@ export function renderStarterView() {
             </select>
           </div>
         </div>
+
+        <div style="margin-top:18px; font-size:12px; color:var(--text-faint);">
+          Henri Julius
+        </div>
       </div>
     </section>
   `;
